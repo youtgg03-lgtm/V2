@@ -44,6 +44,11 @@ async def _run_bot_async(build_app_func, bot_name):
         await app.start()
         logger.info(f"{bot_name} initialized and started")
         await app.updater.start_polling()
+        # start_polling() is non-blocking — it kicks off polling and returns immediately.
+        # Without something to block on here, execution falls straight into `finally`
+        # and stops the bot right after it starts. This keeps the coroutine (and polling)
+        # alive until the thread is killed.
+        await asyncio.Event().wait()
     except Exception as e:
         logger.error(f"{bot_name} polling failed: {e}")
         raise
@@ -98,4 +103,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-
