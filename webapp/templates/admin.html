@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<title>Uchiro Admin</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('assets', filename='style.css') }}">
+<style>
+.stat-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;}
+.stat-card{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px;}
+.stat-card .num{font-family:var(--font-display); font-size:24px; margin-top:4px;}
+table{width:100%; border-collapse:collapse; font-size:12.5px;}
+th{text-align:left; color:var(--slate); font-family:var(--font-mono); font-weight:400; font-size:10px; text-transform:uppercase; padding:8px 4px; border-bottom:1px solid var(--line);}
+td{padding:9px 4px; border-bottom:1px solid var(--line); vertical-align:middle;}
+.status-chip{font-family:var(--font-mono); font-size:10px; padding:3px 8px; border-radius:999px;}
+.chip-pending{background:rgba(255,178,48,.15); color:var(--amber);}
+.chip-approved{background:rgba(62,207,142,.15); color:var(--mint);}
+.mini-btn{background:var(--surface-2); border:1px solid var(--line); color:var(--slate); border-radius:7px; padding:5px 9px; font-size:11px;}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div class="topbar">
+    <div class="brand"><span class="mark">U</span> Admin Panel</div>
+    <div class="user"><span class="pill"><span class="status-dot status-live"></span>Bots online</span></div>
+  </div>
+
+  <!-- ===================== DASHBOARD ===================== -->
+  <div id="screen-dash" class="screen">
+    <div class="eyebrow" style="justify-content:flex-start; margin-bottom:12px;">TODAY</div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="muted" style="font-size:11px;">Users total</div><div class="num" id="s-users">-</div></div>
+      <div class="stat-card"><div class="muted" style="font-size:11px;">Pending orders</div><div class="num" id="s-pending">-</div></div>
+      <div class="stat-card"><div class="muted" style="font-size:11px;">Approved orders</div><div class="num" id="s-approved">-</div></div>
+      <div class="stat-card"><div class="muted" style="font-size:11px;">Items in stock</div><div class="num" id="s-items">-</div></div>
+    </div>
+    <div class="order-card">
+      <div style="font-weight:700; margin-bottom:6px; font-size:13px;">Draft items waiting</div>
+      <p class="muted" style="font-size:12px; margin-bottom:12px;" id="draft-note"></p>
+      <button class="mini-btn" style="width:100%; padding:10px;" onclick="releaseAll()">🚀 Release all drafts</button>
+    </div>
+  </div>
+
+  <!-- ===================== ORDERS ===================== -->
+  <div id="screen-orders" class="screen hidden">
+    <div class="eyebrow" style="justify-content:flex-start; margin-bottom:12px;">PENDING ORDERS</div>
+    <div id="admin-orders"></div>
+  </div>
+
+  <!-- ===================== PRODUCTS ===================== -->
+  <div id="screen-products" class="screen hidden">
+    <div class="row-between" style="margin-bottom:12px;">
+      <div class="eyebrow" style="justify-content:flex-start;">PRODUCTS</div>
+      <button class="mini-btn" onclick="toggleAddForm()">+ Add</button>
+    </div>
+    <div class="order-card hidden" id="add-form">
+      <div class="field"><label>Category</label>
+        <select id="new-category">
+          {% for cat in categories %}<option>{{ cat }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field"><label>Name</label><input id="new-name" type="text" placeholder="e.g. Chroma Seer"></div>
+      <div class="field"><label>Price (USD)</label><input id="new-price" type="number" step="0.01"></div>
+      <div class="field"><label>Quantity</label><input id="new-qty" type="number"></div>
+      <button class="mini-btn" style="width:100%; padding:10px;" onclick="addProduct()">Save as draft</button>
+      <p class="muted" style="font-size:10.5px; margin-top:8px;">New items save as draft — use "Release all drafts" on Dashboard to publish.</p>
+    </div>
+    <div id="admin-products"></div>
+  </div>
+
+  <!-- ===================== COUPONS ===================== -->
+  <div id="screen-coupons" class="screen hidden">
+    <div class="eyebrow" style="justify-content:flex-start; margin-bottom:12px;">COUPONS</div>
+    <div class="order-card">
+      <div class="field"><label>Code</label><input id="cp-code" type="text" style="text-transform:uppercase;" placeholder="FRUIT20"></div>
+      <div class="field"><label>Type</label><select id="cp-type"><option value="percent">Percent off</option><option value="fixed">Fixed off</option></select></div>
+      <div class="field"><label>Amount</label><input id="cp-amount" type="number"></div>
+      <div class="field"><label>Max uses</label><input id="cp-maxuses" type="number"></div>
+      <button class="mini-btn" style="width:100%; padding:10px;" onclick="addCoupon()">Create coupon</button>
+    </div>
+    <table><thead><tr><th>Code</th><th>Off</th><th>Used</th><th></th></tr></thead><tbody id="coupons-table"></tbody></table>
+  </div>
+
+  <!-- ===================== BROADCAST ===================== -->
+  <div id="screen-broadcast" class="screen hidden">
+    <div class="eyebrow" style="justify-content:flex-start; margin-bottom:12px;">BROADCAST</div>
+    <div class="order-card">
+      <p class="muted" style="font-size:12px; margin-bottom:12px;">Sends to every user in the store bot's user list — same as the <span class="mono">/broadcast</span> command.</p>
+      <div class="field"><label>Message</label><textarea id="bc-message" rows="5" placeholder="New restock: Dragon Fruit x5 back in stock…"></textarea></div>
+      <div class="row-between">
+        <span class="muted mono" style="font-size:11px;" id="bc-count">~0 recipients</span>
+        <button class="mini-btn" onclick="sendBroadcast()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabbar">
+    <button class="tab-btn" data-tab="dash" onclick="switchTab('dash')"><span class="icon">📊</span>Home</button>
+    <button class="tab-btn" data-tab="orders" onclick="switchTab('orders')"><span class="icon">🧾</span>Orders</button>
+    <button class="tab-btn" data-tab="products" onclick="switchTab('products')"><span class="icon">📦</span>Items</button>
+    <button class="tab-btn" data-tab="coupons" onclick="switchTab('coupons')"><span class="icon">🏷️</span>Coupons</button>
+    <button class="tab-btn" data-tab="broadcast" onclick="switchTab('broadcast')"><span class="icon">📢</span>Notify</button>
+  </div>
+</div>
+
+<script src="{{ url_for('assets', filename='data.js') }}"></script>
+<script>
+const tg = window.Telegram ? window.Telegram.WebApp : null;
+if(tg){ tg.ready(); tg.expand(); }
+
+function switchTab(tab){
+  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+  document.getElementById('screen-' + tab).classList.remove('hidden');
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  if(tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+  if(tab === 'products') loadProducts();
+  if(tab === 'orders') loadOrders();
+  if(tab === 'dash') loadDashboard();
+}
+
+/* ---- dashboard ----
+   webapp_server.py has no dedicated /api/admin/stats endpoint yet,
+   so these numbers are derived client-side from /api/admin/items
+   and /api/admin/orders instead of a single stats call. */
+async function loadDashboard(){
+  try{
+    const [itemsRes, ordersRes] = await Promise.all([API.adminItems(), API.adminOrders()]);
+    const items = itemsRes.items || [];
+    const orders = ordersRes.orders || [];
+    document.getElementById('s-items').textContent = items.reduce((a,i) => a + (i.quantity || 0), 0);
+    document.getElementById('s-pending').textContent = orders.filter(o => o.status === 'pending').length;
+    document.getElementById('s-approved').textContent = orders.filter(o => o.status === 'approved').length;
+    document.getElementById('s-users').textContent = '—'; // no user-count endpoint yet — see admin_bot.py's /stats instead
+    document.getElementById('draft-note').textContent = items.filter(i => !i.active).length + ' inactive/draft items.';
+  }catch(e){
+    document.getElementById('draft-note').textContent = 'Could not load — open this from the Admin Bot\'s /panel to authenticate.';
+  }
+}
+function releaseAll(){
+  alert('There\'s no /api/admin/release-all endpoint yet — use the /release command in the Admin Bot for now, or add one to webapp_server.py calling db.release_all_drafts().');
+}
+
+/* ---- orders ----
+   Real data via GET /api/admin/orders. NOTE: webapp_server.py does not
+   currently expose an approve/reject API route — only the Admin Bot's
+   inline buttons (appr_<id> / rej_<id> callback) can approve orders.
+   The buttons below are left as a reminder of that gap, not live actions. */
+async function loadOrders(){
+  const mount = document.getElementById('admin-orders');
+  mount.innerHTML = `<div class="order-card">Loading…</div>`;
+  try{
+    const data = await API.adminOrders();
+    const orders = (data.orders || []).filter(o => o.status === 'pending');
+    mount.innerHTML = orders.length ? orders.map(o => `
+      <div class="order-card">
+        <div class="row-between"><div><div class="mono muted" style="font-size:11px;">#${o.id}</div>
+          <div style="font-weight:600; font-size:13px; margin-top:3px;">Item #${o.item_id}</div></div>
+          <span class="status-chip chip-pending">Pending</span></div>
+        <div class="muted" style="font-size:11.5px; margin-top:6px;">buyer id ${o.buyer_chat_id}</div>
+        <div class="toast-banner" style="margin-top:10px; font-size:11px;">Approve/reject this from the Admin Bot chat — there's no approve API route yet.</div>
+      </div>`).join('') : `<div class="order-card">No pending orders 🎉</div>`;
+  }catch(e){
+    mount.innerHTML = `<div class="order-card">Couldn't load orders — open via the Admin Bot's /panel command.</div>`;
+  }
+}
+
+/* ---- products — real via GET/POST /api/admin/items ---- */
+function toggleAddForm(){ document.getElementById('add-form').classList.toggle('hidden'); }
+async function addProduct(){
+  const form = new FormData();
+  form.append('category', document.getElementById('new-category').value);
+  form.append('name', document.getElementById('new-name').value);
+  form.append('price', document.getElementById('new-price').value);
+  form.append('quantity', document.getElementById('new-qty').value);
+  const res = await API.adminCreateItem(form);
+  if(res.error) return alert('Error: ' + res.error);
+  toggleAddForm();
+  loadProducts();
+}
+async function loadProducts(){
+  const mount = document.getElementById('admin-products');
+  mount.innerHTML = `<div class="order-card">Loading…</div>`;
+  try{
+    const data = await API.adminItems();
+    mount.innerHTML = (data.items || []).map(p => `
+      <div class="order-card">
+        <div class="row-between">
+          <div><div style="font-weight:600; font-size:13px;">${p.name}</div><div class="muted mono" style="font-size:11px; margin-top:3px;">${p.category} · #${p.id}</div></div>
+          <div style="text-align:right;"><div class="mono" style="font-weight:700;">$${p.price}</div><div class="muted mono" style="font-size:11px;">${p.quantity} left</div></div>
+        </div>
+      </div>`).join('');
+  }catch(e){
+    mount.innerHTML = `<div class="order-card">Couldn't load — open via the Admin Bot's /panel command.</div>`;
+  }
+}
+
+/* ---- coupons ----
+   webapp_server.py has no /api/admin/coupons route — coupons are
+   fully real, but bot-only right now (/addcoupon, /listcoupons,
+   /disablecoupon in admin_bot.py). This tab is a placeholder until
+   that's added to the web API. */
+document.getElementById('screen-coupons').innerHTML = `
+  <div class="eyebrow" style="justify-content:flex-start; margin-bottom:12px;">COUPONS</div>
+  <div class="toast-banner">Coupons are fully working, but only through the Admin Bot right now — use <span class="mono">/addcoupon</span>, <span class="mono">/listcoupons</span>, <span class="mono">/disablecoupon</span> there. Add an /api/admin/coupons route to webapp_server.py to manage them here too.</div>`;
+
+/* ---- broadcast ----
+   No /broadcast route in webapp_server.py or admin_bot.py yet —
+   see admin_bot_additions.py for the code to add it. */
+document.getElementById('screen-broadcast').innerHTML = `
+  <div class="eyebrow" style="justify-content:flex-start; margin-bottom:12px;">BROADCAST</div>
+  <div class="toast-banner">Not wired up yet — this needs the <span class="mono">/broadcast</span> command from <span class="mono">admin_bot_additions.py</span> added to admin_bot.py first.</div>`;
+
+document.addEventListener('DOMContentLoaded', () => switchTab('dash'));
+</script>
+</body>
+</html>
