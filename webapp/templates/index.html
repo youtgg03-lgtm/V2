@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<title>Uchiro Store</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Khmer:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('assets', filename='style.css') }}">
+<style>body{font-family:'Noto Sans Khmer','Inter',-apple-system,sans-serif;}</style>
+</head>
+<body>
+
+<div id="app">
+
+  <div class="topbar">
+    <div class="brand">
+      <span class="mark">{% if logo_url %}<img src="{{ logo_url }}">{% else %}U{% endif %}</span>
+      Uchiro Store
+    </div>
+    <div class="topbar-right">
+      <button class="lang-toggle" onclick="toggleLang()">🌐 <strong id="lang-label">KM</strong></button>
+    </div>
+  </div>
+
+  <!-- ===================== SHOP ===================== -->
+  <div id="screen-shop" class="screen">
+    <div class="mini-hero">
+      <div class="mini-aura"><div class="ring"></div><div class="ring"></div><div class="core"></div></div>
+      <div class="mini-hero-content">
+        {% if logo_url %}<img src="{{ logo_url }}" class="hero-logo">{% endif %}
+        <h1>UCHIRO</h1>
+        <div class="eyebrow">Blox Fruits · Cambodia 🇰🇭</div>
+      </div>
+    </div>
+
+    <div class="collection-grid" id="collection-grid"></div>
+    <div class="chip-row" id="chip-row"></div>
+    <div class="pgrid" id="product-grid"></div>
+  </div>
+
+  <!-- ===================== ORDERS ===================== -->
+  <div id="screen-orders" class="screen hidden">
+    <div class="eyebrow" style="justify-content:flex-start; margin-bottom:14px;" data-i18n="my_orders">My orders</div>
+    <div id="orders-list"></div>
+  </div>
+
+  <!-- ===================== HELP ===================== -->
+  <div id="screen-help" class="screen hidden">
+    <div class="eyebrow" style="justify-content:flex-start; margin-bottom:14px;" data-i18n="help_title">Help</div>
+
+    <div class="order-card">
+      <div style="font-weight:700; margin-bottom:10px;" data-i18n="warranty_policy">Warranty policy</div>
+      <div class="row-between" style="margin-bottom:8px;"><span class="pill"><span class="status-dot status-live"></span>14 ថ្ងៃ</span><span class="muted" style="font-size:11px;">ស្តង់ដារ គិតពីថ្ងៃទទួល</span></div>
+      <div class="row-between" style="margin-bottom:8px;"><span class="pill"><span class="status-dot status-warn"></span>7 ថ្ងៃ</span><span class="muted" style="font-size:11px;">បើលុប Authenticator ចោល</span></div>
+      <div class="row-between"><span class="pill"><span class="status-dot status-expired"></span>0</span><span class="muted" style="font-size:11px;">បើលុប Email + Code ទាំងអស់</span></div>
+    </div>
+
+    <div class="order-card" onclick="openGuideSheet()" style="cursor:pointer;">
+      <div class="row-between">
+        <div style="font-weight:700;" data-i18n="how_to_login_full">How to install & log in</div>
+        <span class="muted">›</span>
+      </div>
+      <p class="muted" style="font-size:12.5px; line-height:1.6; margin-top:8px;">📲 ចុចទីនេះ — ជំហានទាំង 5 ពីទាញយក App រហូតដល់ចូលគណនីជោគជ័យ។</p>
+    </div>
+
+    <div class="order-card">
+      <button id="song-toggle" class="btn-secondary" onclick="toggleSong()">🔈 <span data-i18n="song">Music</span> OFF</button>
+      <audio id="bg-music" loop src="{{ music_url }}"></audio>
+    </div>
+
+    <div class="order-card">
+      <div style="font-weight:700; margin-bottom:10px;" data-i18n="contact_admin">Contact admin</div>
+      <div class="btn-row">
+        <a href="https://t.me/{{ admin_username }}" target="_blank" class="btn-primary" style="display:flex; align-items:center; justify-content:center;">👤 Admin</a>
+        <a href="https://t.me/{{ channel_username }}" target="_blank" class="btn-secondary" style="display:flex; align-items:center; justify-content:center;">📢 Channel</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabbar">
+    <button class="tab-btn" data-tab="shop" onclick="switchTab('shop')"><span class="icon">🛍️</span><span class="label" data-i18n="tab_shop">Shop</span></button>
+    <button class="tab-btn" data-tab="orders" onclick="switchTab('orders')"><span class="icon">🧾</span><span class="label" data-i18n="tab_orders">Orders</span></button>
+    <button class="tab-btn" data-tab="help" onclick="switchTab('help')"><span class="icon">💬</span><span class="label" data-i18n="tab_help">Help</span></button>
+  </div>
+</div>
+
+<!-- ===================== ZOOM LIGHTBOX ===================== -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close">✕</button>
+  <img id="lightbox-img" src="">
+</div>
+
+<!-- ===================== PRODUCT SHEET ===================== -->
+<div class="sheet-backdrop" id="backdrop" onclick="closeSheet()"></div>
+<div class="sheet" id="product-sheet">
+  <div class="sheet-handle"></div>
+  <div id="product-sheet-body"></div>
+</div>
+
+<!-- ===================== CHECKOUT SHEET ===================== -->
+<div class="sheet" id="checkout-sheet">
+  <div class="sheet-handle"></div>
+
+  <div id="checkout-pending">
+    <div class="eyebrow" style="justify-content:flex-start;" data-i18n="checkout">Checkout</div>
+    <h2 style="margin:10px 0 4px; font-size:16px;" id="checkout-item-name"></h2>
+
+    <div class="field" style="margin-top:14px;">
+      <label data-i18n="coupon_code">Coupon code</label>
+      <div style="display:flex; gap:8px;">
+        <input type="text" id="coupon-input" placeholder="UCHIRO10" style="flex:1; text-transform:uppercase;">
+        <button onclick="applyCoupon()" class="btn-secondary" style="width:auto; padding:0 16px;" data-i18n="apply">Apply</button>
+      </div>
+      <div id="coupon-msg" class="mono" style="font-size:11px; margin-top:6px;"></div>
+    </div>
+
+    <div class="row-between" style="font-size:16px; font-weight:700;"><span data-i18n="total">Total</span><span class="mono" id="checkout-total">$0</span></div>
+    <div class="qr-box" id="checkout-qr"></div>
+
+    <div class="field">
+      <label data-i18n="upload_screenshot">Upload payment screenshot</label>
+      <input type="file" accept="image/*" capture="environment" onchange="onScreenshotPicked(this)">
+      <div class="mono" id="checkout-photo-status" style="font-size:11px; margin-top:6px; color:var(--slate);"></div>
+    </div>
+
+    <button id="submit-order-btn" onclick="submitOrder()" class="btn-primary" data-i18n="submit_order">Submit order</button>
+  </div>
+
+  <div id="checkout-waiting" class="hidden">
+    <div class="eyebrow" style="justify-content:flex-start;">⏳ <span data-i18n="waiting">Waiting…</span></div>
+    <p class="muted mt-8" style="font-size:13px; margin:10px 0 16px;">Order <span class="mono" id="checkout-waiting-order-id"></span></p>
+    <div class="bar"><div class="bar-fill" style="width:60%;"></div></div>
+  </div>
+
+  <div id="checkout-rejected" class="hidden">
+    <div class="eyebrow" style="justify-content:flex-start; color:var(--crimson);">❌ <span data-i18n="rejected">Rejected</span></div>
+    <a href="https://t.me/{{ admin_username }}" target="_blank" class="btn-secondary" style="display:block; text-align:center; margin-top:12px;">👤 Contact admin</a>
+  </div>
+
+  <div id="checkout-success" class="hidden">
+    <div class="eyebrow" style="justify-content:flex-start;" data-i18n="delivered">Delivered</div>
+    <h2 style="margin:10px 0 4px; font-size:16px;" id="checkout-item-name-2"></h2>
+    <div class="field mt-16">
+      <label data-i18n="delivery_details">Delivery details</label>
+      <div class="code-box" style="align-items:flex-start;">
+        <span class="mono" id="delivery-text" style="font-size:12.5px; white-space:pre-wrap; line-height:1.6;"></span>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(document.getElementById('delivery-text').textContent)">Copy</button>
+      </div>
+    </div>
+    <div id="delivery-has-totp" class="field hidden">
+      <label data-i18n="live_code">Live code</label>
+      <div class="code-box" id="delivery-code-box"><span class="code">000 000</span><button class="copy-btn refresh-btn" data-i18n="refresh">Refresh</button></div>
+    </div>
+    <div class="btn-row">
+      <button onclick="backToHome()" class="btn-secondary" data-i18n="back_home">Back to home</button>
+      <button onclick="goToMyOrders()" class="btn-primary" data-i18n="view_orders">My orders</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== HOW-TO-LOGIN GUIDE SHEET ===================== -->
+<div class="sheet" id="guide-sheet">
+  <div class="sheet-handle"></div>
+  <div class="eyebrow" style="justify-content:flex-start;">📲 <span data-i18n="how_to_login_full">How to install & log in</span></div>
+
+  <div class="guide-step">
+    <div class="guide-num">1</div>
+    <div>
+      <div class="guide-title">ទាញយក App Authenticator</div>
+      <div class="guide-desc">ទាញយក <strong>Google Authenticator</strong> ឬ <strong>Authy</strong> ពី App Store (iPhone) ឬ Play Store (Android) — ឥតគិតថ្លៃ។</div>
+    </div>
+  </div>
+  <div class="guide-step">
+    <div class="guide-num">2</div>
+    <div>
+      <div class="guide-title">ចូល "ការបញ្ជាទិញរបស់ខ្ញុំ"</div>
+      <div class="guide-desc">ចុចផ្ទាំង 🧾 Orders ខាងក្រោម → ចុច Order ដែល "ប្រគល់ជូនរួច ✅" → ចុច "🔓 មើលគណនីរបស់ខ្ញុំ"។</div>
+    </div>
+  </div>
+  <div class="guide-step">
+    <div class="guide-num">3</div>
+    <div>
+      <div class="guide-title">Copy Name & Password</div>
+      <div class="guide-desc">ចុចប៊ូតុង Copy ក្បែរ Name និង Password → បើក Roblox App → ចូល (Login) ដោយប្រើវា។</div>
+    </div>
+  </div>
+  <div class="guide-step">
+    <div class="guide-num">4</div>
+    <div>
+      <div class="guide-title">Roblox សុំលេខកូដ 6 ខ្ទង់</div>
+      <div class="guide-desc">ត្រឡប់មកទំព័រ "មើលគណនីរបស់ខ្ញុំ" វិញ → ចុច Copy ក្បែរលេខកូដ Live → ត្រឡប់ទៅ Roblox → បិទភ្ជាប់លេខកូដនោះ។</div>
+    </div>
+  </div>
+  <div class="guide-step">
+    <div class="guide-num">5</div>
+    <div>
+      <div class="guide-title">លេខកូដផុតកំណត់ភ្លាមៗ</div>
+      <div class="guide-desc">លេខកូដប្រែរាល់ 30 វិនាទី — បើវាមិនដំណើរការទេ សូមចុច "Refresh" យកលេខថ្មី រួចព្យាយាមម្តងទៀត។</div>
+    </div>
+  </div>
+
+  <div class="toast-banner" style="margin-top:6px;">
+    <span>⚠️</span>
+    <div><strong>កុំលុប</strong> Authenticator ចោល — Warranty នឹងធ្លាក់ពី 14 ថ្ងៃ មក 7 ថ្ងៃ។ បើលុប Email + Code ទាំងអស់ គ្មាន Warranty ទៀតទេ។</div>
+  </div>
+
+  <button onclick="closeSheet()" class="btn-primary mt-16">យល់ហើយ 👍</button>
+</div>
+
+<script>
+  window.ADMIN_USERNAME = "{{ admin_username }}";
+  window.CHANNEL_USERNAME = "{{ channel_username }}";
+</script>
+<script src="{{ url_for('assets', filename='data.js') }}"></script>
+<script src="{{ url_for('assets', filename='app.js') }}"></script>
+</body>
+</html>
