@@ -1,0 +1,194 @@
+/* ============================================================
+   UCHIRO STORE — Telegram Mini App styles
+   Theme: "Gear 5 awakening" — void black + straw-hat gold aura,
+   crimson accent for warranty/urgency. Colors default to brand
+   palette, overridden live by Telegram theme params in app.js.
+   ============================================================ */
+:root{
+  --void:      #0a0b0e;
+  --surface:   #14161d;
+  --surface-2: #1c1f29;
+  --surface-3: #262a37;
+  --line:      #2a2e3a;
+  --ivory:     #f4f0e4;
+  --amber:     #ffb230;
+  --amber-2:   #ffd166;
+  --crimson:   #e8433f;
+  --mint:      #3ecf8e;
+  --slate:     #8b90a0;
+  --slate-dim: #5b606f;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --font-display:'Anton','Arial Narrow',sans-serif;
+  --font-body:'Inter',-apple-system,sans-serif;
+  --font-mono:'JetBrains Mono','Courier New',monospace;
+}
+*{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  background:var(--void); color:var(--ivory); font-family:var(--font-body);
+  overscroll-behavior-y:contain; -webkit-font-smoothing:antialiased;
+}
+a{color:inherit; text-decoration:none;} img{max-width:100%; display:block;} ul{list-style:none;}
+button, input, select, textarea{font-family:inherit; color:inherit;}
+.hidden{display:none !important;}
+
+#app{display:flex; flex-direction:column; height:100vh; height:100dvh;}
+
+/* ---------- top bar ---------- */
+.topbar{display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--line); flex-shrink:0;}
+.topbar .brand{display:flex; align-items:center; gap:8px; font-family:var(--font-display); font-size:16px; letter-spacing:.02em;}
+.topbar .mark{width:26px;height:26px;border-radius:8px; background:conic-gradient(from 180deg, var(--amber), var(--crimson), var(--amber)); display:flex;align-items:center;justify-content:center; color:var(--void); font-size:12px; font-family:var(--font-display);}
+.topbar .mark img{width:100%; height:100%; object-fit:cover; border-radius:8px;}
+.topbar-right{display:flex; align-items:center; gap:8px;}
+.lang-toggle{background:var(--surface-2); border:1px solid var(--line); border-radius:999px; padding:5px 10px; font-size:11px; color:var(--slate); font-family:var(--font-mono);}
+.lang-toggle strong{color:var(--amber);}
+
+/* ---------- scroll content ---------- */
+.screen{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:14px 14px calc(84px + var(--safe-bottom));}
+
+/* ---------- hero (compact, no-spam: name + 1 line only) ---------- */
+.mini-hero{position:relative; text-align:center; padding:18px 0 14px; overflow:hidden;}
+.mini-aura{position:absolute; top:50%; left:50%; width:320px; height:320px; transform:translate(-50%,-50%); pointer-events:none;}
+.mini-aura .ring{position:absolute; inset:0; border-radius:50%; border:1px solid rgba(244,240,228,.13); animation:mpulse 4s ease-out infinite;}
+.mini-aura .ring:nth-child(2){animation-delay:1s;}
+.mini-aura .core{position:absolute; top:50%; left:50%; width:130px; height:130px; border-radius:50%; transform:translate(-50%,-50%); background:radial-gradient(circle, rgba(255,178,48,.4), rgba(255,178,48,0) 70%); filter:blur(4px); animation:mbreathe 3.2s ease-in-out infinite;}
+@keyframes mpulse{0%{transform:scale(.3); opacity:0;} 15%{opacity:.9;} 100%{transform:scale(1); opacity:0;}}
+@keyframes mbreathe{0%,100%{opacity:.6; transform:translate(-50%,-50%) scale(.9);} 50%{opacity:1; transform:translate(-50%,-50%) scale(1.08);}}
+.mini-hero-content{position:relative; z-index:1;}
+.mini-hero .hero-logo{width:52px; height:52px; border-radius:14px; margin:0 auto 8px; object-fit:cover; box-shadow:0 0 24px rgba(255,178,48,.35);}
+.mini-hero h1{font-family:var(--font-display); font-size:26px; letter-spacing:.02em;}
+.eyebrow{font-family:var(--font-mono); font-size:10px; letter-spacing:.13em; text-transform:uppercase; color:var(--amber); display:flex; align-items:center; justify-content:center; gap:6px;}
+.eyebrow::before{content:""; width:5px; height:5px; border-radius:50%; background:var(--amber); box-shadow:0 0 6px var(--amber);}
+
+/* ---------- collection tiles — premium category browse, big emoji ---------- */
+.collection-grid{display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; margin-bottom:16px;}
+.collection-tile{
+  background:linear-gradient(150deg, var(--surface-2), var(--surface-3));
+  border:1px solid var(--line); border-radius:14px; padding:12px 6px;
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  transition:transform .15s ease, border-color .15s ease;
+}
+.collection-tile:active{transform:scale(.94);}
+.collection-tile.active{border-color:var(--amber); box-shadow:0 0 0 1px var(--amber), 0 6px 18px rgba(255,178,48,.18);}
+.collection-tile .emoji{font-size:24px; filter:drop-shadow(0 2px 6px rgba(0,0,0,.4));}
+.collection-tile .label{font-size:9.5px; font-family:var(--font-mono); color:var(--slate); text-align:center; line-height:1.2;}
+.collection-tile.active .label{color:var(--amber); font-weight:700;}
+.collection-tile .count{font-size:8px; color:var(--slate-dim); font-family:var(--font-mono);}
+
+/* ---------- category chips ---------- */
+.chip-row{display:flex; gap:8px; overflow-x:auto; padding:2px 0 14px; -ms-overflow-style:none; scrollbar-width:none;}
+.chip-row::-webkit-scrollbar{display:none;}
+.chip{flex-shrink:0; font-family:var(--font-mono); font-size:12px; padding:8px 14px; border-radius:999px; background:var(--surface-2); border:1px solid var(--line); color:var(--slate); white-space:nowrap;}
+.chip.active{background:var(--amber); color:#1a1200; border-color:var(--amber); font-weight:600;}
+
+/* ---------- product cards — SMALL card, BIG warranty ribbon ---------- */
+.pgrid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+.pcard{background:var(--surface); border:1px solid var(--line); border-radius:14px; overflow:hidden; position:relative; transition:transform .15s;}
+.pcard:active{transform:scale(.97);}
+.pcard.sold-out{opacity:.45; filter:grayscale(.5);}
+.pcard-media{aspect-ratio:1/1; position:relative; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-size:11px; color:var(--slate-dim); text-align:center; padding:8px;
+  background:radial-gradient(circle at 30% 20%, rgba(255,178,48,.18), transparent 55%), linear-gradient(150deg, var(--surface-2), var(--surface-3));}
+.pcard .new-badge{position:absolute; top:8px; right:8px; font-family:var(--font-mono); font-size:9px; font-weight:700; padding:3px 7px; border-radius:999px; background:var(--crimson); color:#fff; z-index:2;}
+.pcard .sold-badge{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(10,11,14,.6); z-index:3; font-family:var(--font-display); font-size:13px; letter-spacing:.06em; color:var(--ivory);}
+/* the "big" warranty ribbon — diagonal corner banner, not a tiny pill */
+.warranty-ribbon{
+  position:absolute; top:10px; left:-30px; z-index:2; transform:rotate(-45deg);
+  background:linear-gradient(90deg, var(--amber), var(--amber-2)); color:#1a1200;
+  font-family:var(--font-mono); font-weight:700; font-size:10px; letter-spacing:.03em;
+  padding:4px 34px; box-shadow:0 2px 8px rgba(0,0,0,.35);
+}
+.trade-badge{position:absolute; top:8px; left:8px; z-index:2; font-family:var(--font-mono); font-size:9.5px; padding:3px 8px; border-radius:999px; background:rgba(62,207,142,.18); color:var(--mint);}
+.pcard-body{padding:9px 10px 11px;}
+.pcard-body h3{font-size:12px; font-weight:600; line-height:1.3; margin-bottom:6px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
+.pcard-foot{display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;}
+.pcard .price{font-family:var(--font-mono); font-size:14px; font-weight:700;}
+.pcard .stock{font-size:9.5px; color:var(--slate-dim); font-family:var(--font-mono);}
+.pcard .buy-btn{width:100%; background:var(--amber); color:#1a1200; border:0; border-radius:8px; padding:7px; font-size:11.5px; font-weight:700; letter-spacing:.02em;}
+.pcard .buy-btn:disabled{background:var(--surface-3); color:var(--slate-dim);}
+
+/* ---------- zoom lightbox (image + QR) ---------- */
+.lightbox{position:fixed; inset:0; z-index:60; background:rgba(0,0,0,.92); display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity .2s;}
+.lightbox.open{opacity:1; pointer-events:auto;}
+.lightbox img{max-width:92vw; max-height:80vh; border-radius:12px; transform:scale(.9); transition:transform .2s;}
+.lightbox.open img{transform:scale(1);}
+.lightbox-close{position:absolute; top:20px; right:20px; width:36px; height:36px; border-radius:50%; background:var(--surface-2); border:1px solid var(--line); color:var(--ivory); font-size:16px;}
+.zoomable{cursor:zoom-in; position:relative;}
+.zoomable::after{content:"🔍"; position:absolute; bottom:8px; right:8px; font-size:12px; background:rgba(0,0,0,.5); border-radius:6px; padding:3px 5px;}
+
+/* ---------- bottom sheet (product detail / checkout) ---------- */
+.sheet-backdrop{position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:40; opacity:0; pointer-events:none; transition:opacity .2s;}
+.sheet-backdrop.open{opacity:1; pointer-events:auto;}
+.sheet{position:fixed; left:0; right:0; bottom:0; z-index:41; background:var(--surface); border-radius:20px 20px 0 0; border-top:1px solid var(--line);
+  max-height:88vh; overflow-y:auto; transform:translateY(100%); transition:transform .25s ease; padding:18px 18px calc(24px + var(--safe-bottom));}
+.sheet.open{transform:translateY(0);}
+.sheet-handle{width:36px; height:4px; background:var(--slate-dim); border-radius:99px; margin:0 auto 16px;}
+.sheet-media{aspect-ratio:16/9; border-radius:12px; background:linear-gradient(150deg, var(--surface-2), var(--surface-3)); margin-bottom:14px; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); color:var(--slate-dim); font-size:13px; overflow:hidden;}
+.sheet-media img{width:100%; height:100%; object-fit:cover;}
+.sheet h2{font-size:17px; font-weight:700; margin-bottom:6px;}
+.sheet .desc{color:var(--slate); font-size:13px; line-height:1.5; margin-bottom:12px;}
+.tag-row{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px;}
+.tag{font-size:10.5px; font-family:var(--font-mono); color:var(--slate); border:1px solid var(--line); padding:3px 8px; border-radius:6px;}
+.tag.tag-warranty{color:var(--amber); border-color:rgba(255,178,48,.4); font-weight:700;}
+
+/* ---------- form fields ---------- */
+.field{margin-bottom:12px;}
+.field label{display:block; font-size:11px; color:var(--slate); margin-bottom:6px; font-family:var(--font-mono);}
+.field input, .field select, .field textarea{width:100%; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:11px 13px; font-size:14px; outline:none;}
+.field input:focus{border-color:var(--amber);}
+
+.row-between{display:flex; align-items:center; justify-content:space-between;}
+.divider{height:1px; background:var(--line); margin:14px 0;}
+.mono{font-family:var(--font-mono);}
+.muted{color:var(--slate);}
+.pill{font-size:10.5px; font-family:var(--font-mono); color:var(--slate); border:1px solid var(--line); padding:3px 9px; border-radius:999px; display:inline-flex; align-items:center; gap:5px;}
+.status-dot{width:6px;height:6px;border-radius:50%; display:inline-block;}
+.status-live{background:var(--mint); box-shadow:0 0 6px var(--mint);}
+.status-warn{background:var(--amber); box-shadow:0 0 6px var(--amber);}
+.status-expired{background:var(--crimson); box-shadow:0 0 6px var(--crimson);}
+
+/* ---------- action buttons ---------- */
+.btn-primary{width:100%; background:var(--amber); color:#1a1200; font-weight:700; padding:13px; border-radius:12px; border:0; font-size:14px;}
+.btn-secondary{width:100%; background:var(--surface-2); border:1px solid var(--line); color:var(--ivory); padding:12px; border-radius:12px; font-size:13.5px;}
+.btn-row{display:flex; gap:10px; margin-top:10px;}
+.btn-row > *{flex:1;}
+
+/* ---------- KHQR checkout ---------- */
+.qr-box{width:180px; height:180px; margin:16px auto; border-radius:14px; background:var(--ivory); display:flex; align-items:center; justify-content:center; border:1px solid var(--line); overflow:hidden;}
+.qr-box img{width:100%; height:100%; object-fit:contain;}
+.qr-inner{color:#111; font-family:var(--font-mono); font-size:10px; text-align:center; padding:8px;}
+.bar{height:4px; background:var(--surface-3); border-radius:99px; overflow:hidden;}
+.bar-fill{height:100%; background:var(--amber); transition:width 1s linear;}
+
+/* ---------- toast ---------- */
+.toast-banner{background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:11px 14px; font-size:12.5px; color:var(--slate); display:flex; gap:8px; align-items:flex-start;}
+.toast-banner strong{color:var(--ivory);}
+
+/* ---------- order card ---------- */
+.order-card{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:12px;}
+.code-box{background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:11px 13px; display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:8px;}
+.code-box .code{font-family:var(--font-mono); font-size:19px; letter-spacing:.08em; color:var(--amber);}
+.copy-btn{background:var(--surface-3); border:1px solid var(--line); color:var(--slate); border-radius:7px; padding:6px 9px; font-size:10.5px;}
+
+/* ---------- warranty countdown — BIG, prominent ---------- */
+.warranty-countdown{background:linear-gradient(120deg, rgba(255,178,48,.14), rgba(255,178,48,.03)); border:1px solid rgba(255,178,48,.3); border-radius:12px; padding:12px 14px; text-align:center; margin-top:10px;}
+.warranty-countdown .big{font-family:var(--font-display); font-size:22px; color:var(--amber); letter-spacing:.02em;}
+.warranty-countdown.expired{background:rgba(232,67,63,.1); border-color:rgba(232,67,63,.4);}
+.warranty-countdown.expired .big{color:var(--crimson);}
+
+/* ---------- how-to-login guide steps ---------- */
+.guide-step{display:flex; gap:12px; margin-bottom:16px;}
+.guide-num{
+  flex-shrink:0; width:28px; height:28px; border-radius:50%;
+  background:linear-gradient(135deg, var(--amber), var(--amber-2)); color:#1a1200;
+  display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-size:14px;
+}
+.guide-title{font-weight:700; font-size:13.5px; margin-bottom:4px;}
+.guide-desc{color:var(--slate); font-size:12.5px; line-height:1.6;}
+
+.empty-state{text-align:center; padding:60px 20px; color:var(--slate);}
+
+/* ---------- bottom tab bar ---------- */
+.tabbar{position:fixed; left:0; right:0; bottom:0; z-index:30; display:flex; background:rgba(20,22,29,.94); backdrop-filter:blur(16px); border-top:1px solid var(--line); padding:8px 6px calc(8px + var(--safe-bottom));}
+.tab-btn{flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; background:none; border:0; padding:6px 0; color:var(--slate-dim); font-size:10.5px; font-family:var(--font-mono);}
+.tab-btn .icon{font-size:18px;}
+.tab-btn.active{color:var(--amber);}
