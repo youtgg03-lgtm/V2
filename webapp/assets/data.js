@@ -74,7 +74,7 @@ const I18N = {
   en: {
     tab_shop: "Shop", tab_orders: "Orders", tab_help: "Help",
     all: "All", buy_now: "Buy now", sold_out: "Sold out", new: "NEW",
-    warranty_days: (d) => `${d}d warranty`, trade: "Trade",
+    warranty_days: (d) => `${d}D`, trade: "Trade",
     checkout: "Checkout", total: "Total", upload_screenshot: "Upload payment screenshot",
     no_screenshot: "No screenshot selected yet", submit_order: "Submit order",
     coupon_code: "Coupon code", apply: "Apply",
@@ -90,7 +90,7 @@ const I18N = {
   km: {
     tab_shop: "ទំនិញ", tab_orders: "ការបញ្ជាទិញ", tab_help: "ជំនួយ",
     all: "ទាំងអស់", buy_now: "ទិញឥឡូវ", sold_out: "អស់ស្តុក", new: "ថ្មី",
-    warranty_days: (d) => `Warranty ${d}ថ្ងៃ`, trade: "Trade",
+    warranty_days: (d) => `${d}ថ្ងៃ`, trade: "Trade",
     checkout: "ទូទាត់", total: "សរុប", upload_screenshot: "Upload រូបភាពទូទាត់",
     no_screenshot: "មិនទាន់ជ្រើសរើសរូបភាពទេ", submit_order: "ដាក់ស្នើការបញ្ជាទិញ",
     coupon_code: "លេខកូដបញ្ចុះតម្លៃ", apply: "ប្រើ",
