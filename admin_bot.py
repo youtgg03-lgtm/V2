@@ -211,4 +211,3 @@ def build_app():
 if __name__ == "__main__":
     db.init_db()
     build_app().run_polling()
-```[cite: 1, 6]
