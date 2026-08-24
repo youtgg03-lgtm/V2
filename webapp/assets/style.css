@@ -185,6 +185,37 @@ button, input, select, textarea{font-family:inherit; color:inherit;}
 .guide-title{font-weight:700; font-size:13.5px; margin-bottom:4px;}
 .guide-desc{color:var(--slate); font-size:12.5px; line-height:1.6;}
 
+/* ---------- tap-anywhere-to-copy delivery fields ---------- */
+.copy-field{
+  background:var(--surface-2); border:1px solid var(--line); border-radius:12px;
+  padding:12px 14px; margin-bottom:10px; cursor:pointer; transition:border-color .15s, background .15s;
+  position:relative; overflow:hidden;
+}
+.copy-field:active{transform:scale(.98);}
+.copy-field.copied{border-color:var(--mint); background:rgba(62,207,142,.1);}
+.copy-field .cf-label{
+  font-family:var(--font-mono); font-size:10.5px; color:var(--slate); text-transform:uppercase;
+  letter-spacing:.05em; display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;
+}
+.copy-field .cf-icon{font-size:13px; opacity:.6;}
+.copy-field .cf-value{
+  font-family:var(--font-mono); font-size:15px; color:var(--ivory); font-weight:600;
+  word-break:break-all; line-height:1.4;
+}
+.copy-field .cf-value.big-code{font-size:22px; letter-spacing:.1em; color:var(--amber);}
+.copy-field .cf-refresh{
+  position:absolute; top:10px; right:12px; background:var(--surface-3); border:1px solid var(--line);
+  color:var(--slate); border-radius:7px; padding:5px 10px; font-size:10.5px; font-family:var(--font-mono);
+}
+.copy-field.guide-link{display:flex; align-items:center; justify-content:space-between; cursor:pointer;}
+.copy-field.guide-link .cf-value{font-size:13px; color:var(--amber); font-weight:600;}
+.copy-toast{
+  position:fixed; bottom:100px; left:50%; transform:translateX(-50%) translateY(20px);
+  background:var(--mint); color:#062617; font-weight:700; font-size:13px; padding:10px 20px;
+  border-radius:999px; z-index:70; opacity:0; pointer-events:none; transition:opacity .2s, transform .2s;
+}
+.copy-toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
 .empty-state{text-align:center; padding:60px 20px; color:var(--slate);}
 
 /* ---------- bottom tab bar ---------- */
