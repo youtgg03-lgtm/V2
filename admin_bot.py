@@ -21,7 +21,7 @@ logging.basicConfig(level=logging.INFO)
 def _admin_only(func):
     async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not db.is_admin_id(update.effective_user.id):
-            return await update.message.reply_text("🚫 Owner only.")
+            return await update.message.reply_text('<tg-emoji emoji-id="5240241223632954241">🚫</tg-emoji> Owner only.', parse_mode="HTML")
         return await func(update, context)
     return wrapper
 
@@ -29,32 +29,33 @@ def _admin_only(func):
 @_admin_only
 async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not db.is_admin_id(update.effective_user.id):
-        return await update.message.reply_text("🚫 Owner only.")
+        return await update.message.reply_text('<tg-emoji emoji-id="5240241223632954241">🚫</tg-emoji> Owner only.', parse_mode="HTML")
     text = (
-        "👋 Uchiro Store — Admin Bot\n\n"
-        "📋 *Command ទាំងអស់:*\n"
-        "/panel — 📊 Admin Panel (add product, approve order, coupons)\n"
-        "/stats — 📈 ស្ថិតិលឿន\n"
-        "/addcoupon — 🏷️ បង្កើត Coupon\n"
-        "/listcoupons — 📋 មើល Coupon\n"
-        "/disablecoupon — 🔴 បិទ Coupon\n"
-        "/broadcast — 📢 ផ្សព្វផ្សាយសារ\n"
-        "/help — 💬 ពន្យល់លម្អិត\n\n"
-        "ចុចប៊ូតុងខាងក្រោមដើម្បីបើក Panel ភ្លាមៗ 👇"
+        '<tg-emoji emoji-id="5413694143601842851">👋</tg-emoji> Uchiro Store — Admin Bot\n\n'
+        '<tg-emoji emoji-id="5987635334945444280">📋</tg-emoji> <b>Command ទាំងអស់:</b>\n'
+        '/panel — <tg-emoji emoji-id="5231200819986047254">📊</tg-emoji> Admin Panel (add product, approve order, coupons)\n'
+        '/stats — <tg-emoji emoji-id="6300854578149593766">📈</tg-emoji> ស្ថិតិលឿន\n'
+        '/addcoupon — <tg-emoji emoji-id="5298877105000439431">🏷️</tg-emoji> បង្កើត Coupon\n'
+        '/listcoupons — <tg-emoji emoji-id="5987635334945444280">📋</tg-emoji> មើល Coupon\n'
+        '/disablecoupon — <tg-emoji emoji-id="6170475670443922913">🔴</tg-emoji> បិទ Coupon\n'
+        '/broadcast — <tg-emoji emoji-id="6300742299114541958">📢</tg-emoji> ផ្សព្វផ្សាយសារ\n'
+        '/help — <tg-emoji emoji-id="6106980145250177382">💬</tg-emoji> ពន្យល់លម្អិត\n\n'
+        'ចុចប៊ូតុងខាងក្រោមដើម្បីបើក Panel ភ្លាមៗ <tg-emoji emoji-id="5470177992950946662">👇</tg-emoji>'
     )
     kb = InlineKeyboardMarkup([[InlineKeyboardButton(
         "📊 Open Admin Panel", web_app=WebAppInfo(url=f"{WEBAPP_URL}/admin"))]]) if WEBAPP_URL else None
-    await update.message.reply_text(text, parse_mode="Markdown", reply_markup=kb)
+    await update.message.reply_text(text, parse_mode="HTML", reply_markup=kb)
 
 
 @_admin_only
 async def panel_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not WEBAPP_URL:
-        return await update.message.reply_text("⚠️ WEBAPP_URL not set — deploy first, then this button will work.")
+        return await update.message.reply_text('<tg-emoji emoji-id="6265015769008969527">⚠️</tg-emoji> WEBAPP_URL not set — deploy first, then this button will work.', parse_mode="HTML")
     kb = InlineKeyboardMarkup([[InlineKeyboardButton(
         "📊 Open Admin Panel", web_app=WebAppInfo(url=f"{WEBAPP_URL}/admin"))]])
     await update.message.reply_text(
-        "🛠️ Admin Panel — add products, approve orders, manage coupons, all here:",
+        '<tg-emoji emoji-id="5462921117423384478">🛠️</tg-emoji> Admin Panel — add products, approve orders, manage coupons, all here:',
+        parse_mode="HTML",
         reply_markup=kb)
 
 
@@ -63,18 +64,17 @@ async def stats_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     total_users = db.count_users()
     by_status = db.count_orders_by_status()
     text = (
-        f"📊 *Uchiro Store stats*\n\n"
-        f"👥 Users: `{total_users}`\n"
-        f"⏳ Pending orders: `{by_status.get('pending', 0)}`\n"
-        f"✅ Approved orders: `{by_status.get('approved', 0)}`\n"
-        f"❌ Rejected: `{by_status.get('rejected', 0)}`\n"
+        f'<tg-emoji emoji-id="5231200819986047254">📊</tg-emoji> <b>Uchiro Store stats</b>\n\n'
+        f'<tg-emoji emoji-id="6001526766714227911">👥</tg-emoji> Users: <code>{total_users}</code>\n'
+        f'<tg-emoji emoji-id="6289745241511565742">⏳</tg-emoji> Pending orders: <code>{by_status.get("pending", 0)}</code>\n'
+        f'<tg-emoji emoji-id="5904704361182798355">✅</tg-emoji> Approved orders: <code>{by_status.get("approved", 0)}</code>\n'
+        f'<tg-emoji emoji-id="6300696192640620174">❌</tg-emoji> Rejected: <code>{by_status.get("rejected", 0)}</code>\n'
     )
-    await update.message.reply_text(text, parse_mode="Markdown")
+    await update.message.reply_text(text, parse_mode="HTML")
 
 
 @_admin_only
 async def addcoupon_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # /addcoupon CODE percent|fixed AMOUNT MAX_USES
     args = context.args
     if len(args) != 4 or args[1] not in ("percent", "fixed"):
         return await update.message.reply_text(
@@ -85,7 +85,7 @@ async def addcoupon_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         db.add_coupon(code, dtype, float(amount), int(max_uses))
     except ValueError:
         return await update.message.reply_text("AMOUNT និង MAX_USES ត្រូវជាលេខ។")
-    await update.message.reply_text(f"✅ Coupon {code.upper()} បានបង្កើត — មើល/បិទបានក្នុង Panel ដែរ។")
+    await update.message.reply_text(f'<tg-emoji emoji-id="5904704361182798355">✅</tg-emoji> Coupon {code.upper()} បានបង្កើត — មើល/បិទបានក្នុង Panel ដែរ។', parse_mode="HTML")
 
 
 @_admin_only
@@ -94,12 +94,12 @@ async def listcoupons_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not coupons:
         return await update.message.reply_text("គ្មាន Coupon ទេ។")
     lines = [
-        f"{'🟢' if c['active'] else '🔴'} `{c['code']}` — "
+        f"{'<tg-emoji emoji-id=\"6138568461481153914\">🟢</tg-emoji>' if c['active'] else '<tg-emoji emoji-id=\"6170475670443922913\">🔴</tg-emoji>'} <code>{c['code']}</code> — "
         f"{c['amount']:.0f}{'%' if c['discount_type']=='percent' else '$'} off "
         f"({c['used_count']}/{c['max_uses']})"
         for c in coupons
     ]
-    await update.message.reply_text("🏷️ *Coupons:*\n" + "\n".join(lines), parse_mode="Markdown")
+    await update.message.reply_text('<tg-emoji emoji-id="5298877105000439431">🏷️</tg-emoji> <b>Coupons:</b>\n' + "\n".join(lines), parse_mode="HTML")
 
 
 @_admin_only
@@ -107,7 +107,7 @@ async def disablecoupon_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
         return await update.message.reply_text("ប្រើ: /disablecoupon CODE")
     db.disable_coupon(context.args[0])
-    await update.message.reply_text(f"🔴 Coupon {context.args[0].upper()} បិទរួច។")
+    await update.message.reply_text(f'<tg-emoji emoji-id="6170475670443922913">🔴</tg-emoji> Coupon {context.args[0].upper()} បិទរួច។', parse_mode="HTML")
 
 
 @_admin_only
@@ -115,7 +115,7 @@ async def broadcast_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message_text = " ".join(context.args) if context.args else None
     if not message_text:
         return await update.message.reply_text(
-            "ប្រើ: /broadcast <សារ>\n\nឧ. /broadcast 🎉 មានទំនិញថ្មី! ចូលមើលឥឡូវ")
+            'ប្រើ: /broadcast <សារ>\n\nឧ. /broadcast <tg-emoji emoji-id="6107318416874410520">🎉</tg-emoji> មានទំនិញថ្មី! ចូលមើលឥឡូវ', parse_mode="HTML")
 
     user_ids = db.all_user_ids()
     await update.message.reply_text(f"កំពុងផ្ញើទៅ {len(user_ids)} នាក់…")
@@ -125,18 +125,15 @@ async def broadcast_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for i in range(0, len(user_ids), 25):
         for uid in user_ids[i:i + 25]:
             try:
-                await store_bot.send_message(uid, f"📢 {message_text}")
+                await store_bot.send_message(uid, f'<tg-emoji emoji-id="6300742299114541958">📢</tg-emoji> {message_text}', parse_mode="HTML")
                 sent += 1
             except Exception:
                 failed += 1
         await asyncio.sleep(1)
-    await update.message.reply_text(f"✅ ជោគជ័យ: {sent}, បរាជ័យ: {failed}")
+    await update.message.reply_text(f'<tg-emoji emoji-id="5904704361182798355">✅</tg-emoji> ជោគជ័យ: {sent}, បរាជ័យ: {failed}', parse_mode="HTML")
 
 
 async def order_decision_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handles the ✅/❌ buttons on the order notification message. Uses the
-    exact same services.approve_order/reject_order the panel calls, so a
-    decision made here or in the panel can never disagree with each other."""
     query = update.callback_query
     await query.answer()
     if not db.is_admin_id(query.from_user.id):
@@ -147,12 +144,12 @@ async def order_decision_callback(update: Update, context: ContextTypes.DEFAULT_
 
     if action == "appr":
         ok = services.approve_order(order_id)
-        result_text = "✅ អនុម័តរួច — ប្រគល់ជូនរួច" if ok else "⚠️ Order នេះត្រូវបានដោះស្រាយរួចហើយ"
+        result_text = '<tg-emoji emoji-id="5904704361182798355">✅</tg-emoji> អនុម័តរួច — ប្រគល់ជូនរួច' if ok else '<tg-emoji emoji-id="6265015769008969527">⚠️</tg-emoji> Order នេះត្រូវបានដោះស្រាយរួចហើយ'
     else:
         ok = services.reject_order(order_id)
-        result_text = "❌ បដិសេធរួច" if ok else "⚠️ Order នេះត្រូវបានដោះស្រាយរួចហើយ"
+        result_text = '<tg-emoji emoji-id="6300696192640620174">❌</tg-emoji> បដិសេធរួច' if ok else '<tg-emoji emoji-id="6265015769008969527">⚠️</tg-emoji> Order នេះត្រូវបានដោះស្រាយរួចហើយ'
 
-    await query.edit_message_text(query.message.text + f"\n\n{result_text}")
+    await query.edit_message_text(query.message.text + f"\n\n{result_text}", parse_mode="HTML")
 
 
 async def _post_init(application: Application):
@@ -171,24 +168,25 @@ async def _post_init(application: Application):
 @_admin_only
 async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (
-        "🛠️ *Admin Bot — Commands:*\n\n"
-        "/panel — 📊 បើក Admin Panel (add product, approve orders, coupons)\n"
-        "/stats — 📈 មើលស្ថិតិលឿន (users, orders)\n"
-        "/addcoupon — 🏷️ បង្កើត Coupon (CODE percent|fixed AMOUNT MAX_USES)\n"
-        "/listcoupons — 📋 មើល Coupon ទាំងអស់\n"
-        "/disablecoupon — 🔴 បិទ Coupon (CODE)\n"
-        "/broadcast — 📢 ផ្សព្វផ្សាយសារទៅអ្នកទិញទាំងអស់\n\n"
+        '<tg-emoji emoji-id="5462921117423384478">🛠️</tg-emoji> <b>Admin Bot — Commands:</b>\n\n'
+        '/panel — <tg-emoji emoji-id="5231200819986047254">📊</tg-emoji> បើក Admin Panel (add product, approve orders, coupons)\n'
+        '/stats — <tg-emoji emoji-id="6300854578149593766">📈</tg-emoji> មើលស្ថិតិលឿន (users, orders)\n'
+        '/addcoupon — <tg-emoji emoji-id="5298877105000439431">🏷️</tg-emoji> បង្កើត Coupon (CODE percent|fixed AMOUNT MAX_USES)\n'
+        '/listcoupons — <tg-emoji emoji-id="5987635334945444280">📋</tg-emoji> មើល Coupon ទាំងអស់\n'
+        '/disablecoupon — <tg-emoji emoji-id="6170475670443922913">🔴</tg-emoji> បិទ Coupon (CODE)\n'
+        '/broadcast — <tg-emoji emoji-id="6300742299114541958">📢</tg-emoji> ផ្សព្វផ្សាយសារទៅអ្នកទិញទាំងអស់\n\n'
         "🔧 Item add/edit, order approve/reject, and coupon view/close all live in /panel — "
         "this bot stays for the quick chat-only actions."
     )
-    await update.message.reply_text(text, parse_mode="Markdown")
+    await update.message.reply_text(text, parse_mode="HTML")
 
 
 async def unknown_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not db.is_admin_id(update.effective_user.id):
-        return  # stay silent to non-admins poking at commands
+        return
     await update.message.reply_text(
-        f"❓ មិនស្គាល់ Command នេះទេ: {update.message.text}\n\nវាយ /help ដើម្បីមើល Command ទាំងអស់។")
+        f'<tg-emoji emoji-id="6298557526560479072">❓</tg-emoji> មិនស្គាល់ Command នេះទេ: {update.message.text}\n\nវាយ /help ដើម្បីមើល Command ទាំងអស់។',
+        parse_mode="HTML")
 
 
 def build_app():
@@ -202,7 +200,7 @@ def build_app():
     application.add_handler(CommandHandler("disablecoupon", disablecoupon_cmd))
     application.add_handler(CommandHandler("broadcast", broadcast_cmd))
     application.add_handler(CallbackQueryHandler(order_decision_callback, pattern=r"^(appr|rej)_\d+$"))
-    application.add_handler(MessageHandler(filters.COMMAND, unknown_cmd))  # must be LAST — catches unrecognized /commands
+    application.add_handler(MessageHandler(filters.COMMAND, unknown_cmd))
     return application
 
 
