@@ -9,7 +9,7 @@ coupons, broadcasting to buyers, and a quick /stats check.
 import asyncio
 import logging
 from telegram import Update, WebAppInfo, InlineKeyboardMarkup, InlineKeyboardButton, Bot
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
 import database as db
 import services
@@ -28,7 +28,23 @@ def _admin_only(func):
 
 @_admin_only
 async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await panel_cmd(update, context)
+    if not db.is_admin_id(update.effective_user.id):
+        return await update.message.reply_text("🚫 Owner only.")
+    text = (
+        "👋 Uchiro Store — Admin Bot\n\n"
+        "📋 *Command ទាំងអស់:*\n"
+        "/panel — 📊 Admin Panel (add product, approve order, coupons)\n"
+        "/stats — 📈 ស្ថិតិលឿន\n"
+        "/addcoupon — 🏷️ បង្កើត Coupon\n"
+        "/listcoupons — 📋 មើល Coupon\n"
+        "/disablecoupon — 🔴 បិទ Coupon\n"
+        "/broadcast — 📢 ផ្សព្វផ្សាយសារ\n"
+        "/help — 💬 ពន្យល់លម្អិត\n\n"
+        "ចុចប៊ូតុងខាងក្រោមដើម្បីបើក Panel ភ្លាមៗ 👇"
+    )
+    kb = InlineKeyboardMarkup([[InlineKeyboardButton(
+        "📊 Open Admin Panel", web_app=WebAppInfo(url=f"{WEBAPP_URL}/admin"))]]) if WEBAPP_URL else None
+    await update.message.reply_text(text, parse_mode="Markdown", reply_markup=kb)
 
 
 @_admin_only
@@ -143,6 +159,7 @@ async def _post_init(application: Application):
     from telegram import BotCommand
     await application.bot.set_my_commands([
         BotCommand("panel", "📊 Admin Panel"),
+        BotCommand("help", "💬 Command ទាំងអស់"),
         BotCommand("stats", "📈 Stats"),
         BotCommand("addcoupon", "🏷️ បង្កើត Coupon"),
         BotCommand("listcoupons", "📋 មើល Coupon ទាំងអស់"),
@@ -151,16 +168,41 @@ async def _post_init(application: Application):
     ])
 
 
+@_admin_only
+async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = (
+        "🛠️ *Admin Bot — Commands:*\n\n"
+        "/panel — 📊 បើក Admin Panel (add product, approve orders, coupons)\n"
+        "/stats — 📈 មើលស្ថិតិលឿន (users, orders)\n"
+        "/addcoupon — 🏷️ បង្កើត Coupon (CODE percent|fixed AMOUNT MAX_USES)\n"
+        "/listcoupons — 📋 មើល Coupon ទាំងអស់\n"
+        "/disablecoupon — 🔴 បិទ Coupon (CODE)\n"
+        "/broadcast — 📢 ផ្សព្វផ្សាយសារទៅអ្នកទិញទាំងអស់\n\n"
+        "🔧 Item add/edit, order approve/reject, and coupon view/close all live in /panel — "
+        "this bot stays for the quick chat-only actions."
+    )
+    await update.message.reply_text(text, parse_mode="Markdown")
+
+
+async def unknown_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not db.is_admin_id(update.effective_user.id):
+        return  # stay silent to non-admins poking at commands
+    await update.message.reply_text(
+        f"❓ មិនស្គាល់ Command នេះទេ: {update.message.text}\n\nវាយ /help ដើម្បីមើល Command ទាំងអស់។")
+
+
 def build_app():
     application = Application.builder().token(ADMIN_BOT_TOKEN).post_init(_post_init).build()
     application.add_handler(CommandHandler("start", start_cmd))
     application.add_handler(CommandHandler("panel", panel_cmd))
+    application.add_handler(CommandHandler("help", help_cmd))
     application.add_handler(CommandHandler("stats", stats_cmd))
     application.add_handler(CommandHandler("addcoupon", addcoupon_cmd))
     application.add_handler(CommandHandler("listcoupons", listcoupons_cmd))
     application.add_handler(CommandHandler("disablecoupon", disablecoupon_cmd))
     application.add_handler(CommandHandler("broadcast", broadcast_cmd))
     application.add_handler(CallbackQueryHandler(order_decision_callback, pattern=r"^(appr|rej)_\d+$"))
+    application.add_handler(MessageHandler(filters.COMMAND, unknown_cmd))  # must be LAST — catches unrecognized /commands
     return application
 
 
