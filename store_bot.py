@@ -29,9 +29,15 @@ async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (
         f"👋 សូមស្វាគមន៍មកកាន់ {STORE_NAME}!\n\n"
         "🛍️ Blox Fruits Account · MM2 · Blade Ball · Gamepass — ទូទាត់ KHQR ប្រគល់ជូនស្វ័យប្រវត្តិ។\n\n"
-        "ចុចប៊ូតុងខាងក្រោមដើម្បីមើលទំនិញ ទិញ និងមើល Order History ទាំងអស់នៅកន្លែងតែមួយ 👇"
+        "ចុចប៊ូតុងខាងក្រោមដើម្បីមើលទំនិញ ទិញ និងមើល Order History ទាំងអស់នៅកន្លែងតែមួយ 👇\n\n"
+        "📋 *ឬវាយ Command ទាំងនេះផ្ទាល់:*\n"
+        "/shop — 🛍️ មើលទំនិញ\n"
+        "/myorders — 🧾 មើល Order History\n"
+        "/howtobuy — 🛒 របៀបទិញ\n"
+        "/howtologin — 🔐 របៀបចូលគណនី\n"
+        "/help — 💬 ជំនួយ + ទាក់ទង Admin"
     )
-    await update.message.reply_text(text, reply_markup=_open_app_keyboard())
+    await update.message.reply_text(text, parse_mode="Markdown", reply_markup=_open_app_keyboard())
 
 
 async def myorders_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
