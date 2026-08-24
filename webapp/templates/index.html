@@ -19,7 +19,7 @@
       Uchiro Store
     </div>
     <div class="topbar-right">
-      <button class="lang-toggle" onclick="toggleLang()">🌐 <strong id="lang-label">KM</strong></button>
+      <button class="lang-toggle" onclick="toggleLang()"><tg-emoji emoji-id="6107376940098786484">🌐</tg-emoji> <strong id="lang-label">KM</strong></button>
     </div>
   </div>
 
@@ -30,7 +30,7 @@
       <div class="mini-hero-content">
         {% if logo_url %}<img src="{{ logo_url }}" class="hero-logo">{% endif %}
         <h1>UCHIRO</h1>
-        <div class="eyebrow">Blox Fruits · Cambodia 🇰🇭</div>
+        <div class="eyebrow">Blox Fruits · Cambodia <tg-emoji emoji-id="5294018354527353443">🇰🇭</tg-emoji></div>
       </div>
     </div>
 
@@ -61,27 +61,27 @@
         <div style="font-weight:700;" data-i18n="how_to_login_full">How to install & log in</div>
         <span class="muted">›</span>
       </div>
-      <p class="muted" style="font-size:12.5px; line-height:1.6; margin-top:8px;">📲 ចុចទីនេះ — ជំហានទាំង 5 ពីទាញយក App រហូតដល់ចូលគណនីជោគជ័យ។</p>
+      <p class="muted" style="font-size:12.5px; line-height:1.6; margin-top:8px;"><tg-emoji emoji-id="5406809207947142040">📲</tg-emoji> ចុចទីនេះ — ជំហានទាំង 5 ពីទាញយក App រហូតដល់ចូលគណនីជោគជ័យ។</p>
     </div>
 
     <div class="order-card">
-      <button id="song-toggle" class="btn-secondary" onclick="toggleSong()">🔈 <span data-i18n="song">Music</span> OFF</button>
+      <button id="song-toggle" class="btn-secondary" onclick="toggleSong()"><tg-emoji emoji-id="5388632425314140043">🔈</tg-emoji> <span data-i18n="song">Music</span> OFF</button>
       <audio id="bg-music" loop src="{{ music_url }}"></audio>
     </div>
 
     <div class="order-card">
       <div style="font-weight:700; margin-bottom:10px;" data-i18n="contact_admin">Contact admin</div>
       <div class="btn-row">
-        <a href="https://t.me/{{ admin_username }}" target="_blank" class="btn-primary" style="display:flex; align-items:center; justify-content:center;">👤 Admin</a>
-        <a href="https://t.me/{{ channel_username }}" target="_blank" class="btn-secondary" style="display:flex; align-items:center; justify-content:center;">📢 Channel</a>
+        <a href="https://t.me/{{ admin_username }}" target="_blank" class="btn-primary" style="display:flex; align-items:center; justify-content:center;"><tg-emoji emoji-id="5258011929993026890">👤</tg-emoji> Admin</a>
+        <a href="https://t.me/{{ channel_username }}" target="_blank" class="btn-secondary" style="display:flex; align-items:center; justify-content:center;"><tg-emoji emoji-id="6300742299114541958">📢</tg-emoji> Channel</a>
       </div>
     </div>
   </div>
 
   <div class="tabbar">
-    <button class="tab-btn" data-tab="shop" onclick="switchTab('shop')"><span class="icon">🛍️</span><span class="label" data-i18n="tab_shop">Shop</span></button>
-    <button class="tab-btn" data-tab="orders" onclick="switchTab('orders')"><span class="icon">🧾</span><span class="label" data-i18n="tab_orders">Orders</span></button>
-    <button class="tab-btn" data-tab="help" onclick="switchTab('help')"><span class="icon">💬</span><span class="label" data-i18n="tab_help">Help</span></button>
+    <button class="tab-btn" data-tab="shop" onclick="switchTab('shop')"><span class="icon"><tg-emoji emoji-id="5836672976862319297">🛍️</tg-emoji></span><span class="label" data-i18n="tab_shop">Shop</span></button>
+    <button class="tab-btn" data-tab="orders" onclick="switchTab('orders')"><span class="icon"><tg-emoji emoji-id="5264959791213586839">🧾</tg-emoji></span><span class="label" data-i18n="tab_orders">Orders</span></button>
+    <button class="tab-btn" data-tab="help" onclick="switchTab('help')"><span class="icon"><tg-emoji emoji-id="6106980145250177382">💬</tg-emoji></span><span class="label" data-i18n="tab_help">Help</span></button>
   </div>
 </div>
 
@@ -128,14 +128,14 @@
   </div>
 
   <div id="checkout-waiting" class="hidden">
-    <div class="eyebrow" style="justify-content:flex-start;">⏳ <span data-i18n="waiting">Waiting…</span></div>
+    <div class="eyebrow" style="justify-content:flex-start;"><tg-emoji emoji-id="6289745241511565742">⏳</tg-emoji> <span data-i18n="waiting">Waiting…</span></div>
     <p class="muted mt-8" style="font-size:13px; margin:10px 0 16px;">Order <span class="mono" id="checkout-waiting-order-id"></span></p>
     <div class="bar"><div class="bar-fill" style="width:60%;"></div></div>
   </div>
 
   <div id="checkout-rejected" class="hidden">
-    <div class="eyebrow" style="justify-content:flex-start; color:var(--crimson);">❌ <span data-i18n="rejected">Rejected</span></div>
-    <a href="https://t.me/{{ admin_username }}" target="_blank" class="btn-secondary" style="display:block; text-align:center; margin-top:12px;">👤 Contact admin</a>
+    <div class="eyebrow" style="justify-content:flex-start; color:var(--crimson);"><tg-emoji emoji-id="6300696192640620174">❌</tg-emoji> <span data-i18n="rejected">Rejected</span></div>
+    <a href="https://t.me/{{ admin_username }}" target="_blank" class="btn-secondary" style="display:block; text-align:center; margin-top:12px;"><tg-emoji emoji-id="5258011929993026890">👤</tg-emoji> Contact admin</a>
   </div>
 
   <div id="checkout-success" class="hidden">
@@ -152,15 +152,15 @@
 <!-- ===================== HOW-TO-LOGIN GUIDE SHEET ===================== -->
 <div class="sheet" id="guide-sheet">
   <div class="sheet-handle"></div>
-  <div class="eyebrow" style="justify-content:flex-start;">📲 <span data-i18n="how_to_login_full">How to install & log in</span></div>
+  <div class="eyebrow" style="justify-content:flex-start;"><tg-emoji emoji-id="5406809207947142040">📲</tg-emoji> <span data-i18n="how_to_login_full">How to install & log in</span></div>
 
   <div class="guide-step">
     <div class="guide-num">1</div>
     <div>
       <div class="guide-title">មានវិធីពីរ ជ្រើសយកមួយ</div>
       <div class="guide-desc">
-        <strong>⚡ លឿនបំផុត:</strong> គ្រាន់តែ Copy លេខកូដ 6 ខ្ទង់ដែល Refresh ស្រាប់ក្នុង App នេះ — មិនចាំបាច់ដំឡើងអ្វីទេ។<br>
-        <strong>🔑 អចិន្ត្រៃយ៍:</strong> ថតចម្លង "Setup Key" ដាក់ក្នុង App Authenticator ផ្ទាល់ខ្លួន ដើម្បីទទួលបានលេខកូដដោយខ្លួនឯង គ្រប់ពេល។
+        <strong><tg-emoji emoji-id="6107022708376082350">⚡</tg-emoji> លឿនបំផុត:</strong> គ្រាន់តែ Copy លេខកូដ 6 ខ្ទង់ដែល Refresh ស្រាប់ក្នុង App នេះ — មិនចាំបាច់ដំឡើងអ្វីទេ។<br>
+        <strong><tg-emoji emoji-id="5420094143089111506">🔑</tg-emoji> អចិន្ត្រៃយ៍:</strong> ថតចម្លង "Setup Key" ដាក់ក្នុង App Authenticator ផ្ទាល់ខ្លួន ដើម្បីទទួលបានលេខកូដដោយខ្លួនឯង គ្រប់ពេល។
       </div>
     </div>
   </div>
@@ -175,7 +175,7 @@
     <div class="guide-num">3</div>
     <div>
       <div class="guide-title">ចូល "ការបញ្ជាទិញរបស់ខ្ញុំ"</div>
-      <div class="guide-desc">ចុចផ្ទាំង 🧾 Orders ខាងក្រោម → ចុច Order ដែល "ប្រគល់ជូនរួច ✅" → ចុច "🔓 មើលគណនីរបស់ខ្ញុំ"។</div>
+      <div class="guide-desc">ចុចផ្ទាំង <tg-emoji emoji-id="5264959791213586839">🧾</tg-emoji> Orders ខាងក្រោម → ចុច Order ដែល "ប្រគល់ជូនរួច <tg-emoji emoji-id="5904704361182798355">✅</tg-emoji>" → ចុច "<tg-emoji emoji-id="6291893425239234198">🔓</tg-emoji> មើលគណនីរបស់ខ្ញុំ"។</div>
     </div>
   </div>
   <div class="guide-step">
@@ -201,11 +201,11 @@
   </div>
 
   <div class="toast-banner" style="margin-top:6px;">
-    <span>⚠️</span>
+    <span><tg-emoji emoji-id="6265015769008969527">⚠️</tg-emoji></span>
     <div><strong>កុំលុប</strong> Authenticator ចោល — Warranty នឹងធ្លាក់ពី 14 ថ្ងៃ មក 7 ថ្ងៃ។ បើលុប Email + Code ទាំងអស់ គ្មាន Warranty ទៀតទេ។</div>
   </div>
 
-  <button onclick="closeSheet()" class="btn-primary mt-16">យល់ហើយ 👍</button>
+  <button onclick="closeSheet()" class="btn-primary mt-16">យល់ហើយ <tg-emoji emoji-id="5469770542288478598">👍</tg-emoji></button>
 </div>
 
 <script>
@@ -216,3 +216,4 @@
 <script src="{{ url_for('assets', filename='app.js') }}"></script>
 </body>
 </html>
+```[cite: 1, 13]
