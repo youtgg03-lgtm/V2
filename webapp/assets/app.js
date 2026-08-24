@@ -76,7 +76,7 @@ function pcardHTML(item){
   return `
     <div class="pcard ${soldOut ? 'sold-out' : ''}">
       <div class="pcard-media" onclick="${item.photo_url ? `openLightbox('${item.photo_url}')` : `openProduct(${item.id})`}">
-        ${isAccount ? `<div class="warranty-ribbon">🛡️${t('warranty_days', item.warranty_days || 14)}</div>` : `<div class="trade-badge">🔄 ${t('trade')}</div>`}
+        ${isAccount ? `<div class="warranty-ribbon"><tg-emoji emoji-id="5251203410396458957">🛡️</tg-emoji>${t('warranty_days', item.warranty_days || 14)}</div>` : `<div class="trade-badge"><tg-emoji emoji-id="5346269127059196142">🔄</tg-emoji> ${t('trade')}</div>`}
         ${item.is_new ? `<div class="new-badge">${t('new')}</div>` : ''}
         ${soldOut ? `<div class="sold-badge">${t('sold_out')}</div>` : ''}
         ${media}
@@ -95,8 +95,6 @@ function pcardHTML(item){
 function renderCatalog(items){
   itemsById = Object.fromEntries(items.map(i => [i.id, i]));
   const grid = document.getElementById('product-grid');
-  // sold-out items with quantity <= 0 are filtered out entirely (auto-close), not just greyed —
-  // keeping the sold-out CSS above as a safety net for a brief in-between state.
   const filtered = items.filter(i => i.quantity > 0 && (activeCategory === 'all' || i.category === activeCategory));
   grid.innerHTML = filtered.length ? filtered.map(pcardHTML).join('') :
     `<div class="empty-state" style="grid-column:1/-1;">—</div>`;
@@ -107,16 +105,13 @@ function renderChips(){
   row.innerHTML = cats.map(c => `<button class="chip ${c===activeCategory?'active':''}" onclick="setCategory('${c}')">${c==='all'?t('all'):c}</button>`).join('');
 }
 
-/* Premium "collection" tiles — tap Account/Fruit/MM2/... to filter, tap
-   again (or "All") to see everything mixed while scrolling. Emoji come
-   from CATEGORY_EMOJI in data.js — swap those for Premium emoji anytime. */
 function renderCollections(items){
   const grid = document.getElementById('collection-grid');
   const counts = {};
   items.forEach(i => { if(i.quantity > 0) counts[i.category] = (counts[i.category] || 0) + 1; });
   const tiles = ['all', ...allCategories].map(c => {
     const label = c === 'all' ? t('all') : c;
-    const emoji = c === 'all' ? '📦' : categoryEmoji(c);
+    const emoji = c === 'all' ? '🗂️' : categoryEmoji(c);
     const count = c === 'all' ? items.filter(i=>i.quantity>0).length : (counts[c] || 0);
     return `
       <button class="collection-tile ${c===activeCategory?'active':''}" onclick="setCategory('${c}')">
@@ -168,7 +163,7 @@ function openProduct(id){
     <div class="desc">${currentItem.description || ''}</div>
     <div class="tag-row">
       <span class="tag">${currentItem.category}</span>
-      ${isAccount ? `<span class="tag tag-warranty">🛡️ ${t('warranty_days', currentItem.warranty_days)}</span>` : `<span class="tag">${currentItem.quantity} left</span>`}
+      ${isAccount ? `<span class="tag tag-warranty"><tg-emoji emoji-id="5251203410396458957">🛡️</tg-emoji> ${t('warranty_days', currentItem.warranty_days)}</span>` : `<span class="tag">${currentItem.quantity} left</span>`}
     </div>
     <div class="row-between"><span class="mono" style="font-size:22px; font-weight:700;">$${currentItem.price}</span></div>
   `;
@@ -317,8 +312,8 @@ function orderCardHTML(o){
           <div style="font-weight:600; font-size:13.5px; margin-top:3px;">${o.item_name}</div></div>
         <div>${statusBadge}</div>
       </div>
-      ${o.status === 'approved' ? `<button class="btn-primary mt-8" style="margin-top:10px;" onclick="toggleCheckAccount(${o.id})" id="check-btn-${o.id}">🔓 ${t('check_my_account')}</button>` : ''}
-      ${o.is_stale ? `<a href="https://t.me/${window.ADMIN_USERNAME || ''}" target="_blank" class="btn-secondary mt-8" style="display:block; text-align:center; margin-top:10px;">👤 ${t('contact_admin')}</a>` : ''}
+      ${o.status === 'approved' ? `<button class="btn-primary mt-8" style="margin-top:10px;" onclick="toggleCheckAccount(${o.id})" id="check-btn-${o.id}"><tg-emoji emoji-id="6291893425239234198">🔓</tg-emoji> ${t('check_my_account')}</button>` : ''}
+      ${o.is_stale ? `<a href="https://t.me/${window.ADMIN_USERNAME || ''}" target="_blank" class="btn-secondary mt-8" style="display:block; text-align:center; margin-top:10px;"><tg-emoji emoji-id="5258011929993026890">👤</tg-emoji> ${t('contact_admin')}</a>` : ''}
       <div id="order-detail-${o.id}" class="hidden"></div>
     </div>`;
 }
@@ -333,7 +328,7 @@ async function toggleCheckAccount(orderId){
     const status = await API.status(orderId);
     hydrateOrderCard({ id: orderId, ...status });
     box.dataset.loaded = '1';
-    btn.textContent = '🔓 ' + t('check_my_account');
+    btn.innerHTML = '<tg-emoji emoji-id="6291893425239234198">🔓</tg-emoji> ' + t('check_my_account');
   }
   haptic('medium');
 }
@@ -355,7 +350,7 @@ function copyFieldHTML(label, value, opts = {}){
   const cls = opts.big ? 'cf-value big-code' : 'cf-value';
   return `
     <div class="copy-field" id="${id}" onclick="copyField('${id}', this)">
-      <div class="cf-label"><span>${label}</span><span class="cf-icon">📋</span></div>
+      <div class="cf-label"><span>${label}</span><span class="cf-icon"><tg-emoji emoji-id="5987635334945444280">📋</tg-emoji></span></div>
       <div class="${cls}" data-raw="${(value||'').replace(/"/g,'&quot;')}">${value || '—'}</div>
       ${opts.refreshable ? `<button class="cf-refresh" onclick="event.stopPropagation(); refreshLiveField('${id}', ${opts.orderId})">${t('refresh')}</button>` : ''}
     </div>`;
@@ -376,7 +371,7 @@ function showCopyToast(){
     toast = document.createElement('div');
     toast.id = 'copy-toast';
     toast.className = 'copy-toast';
-    toast.textContent = currentLang === 'km' ? '✅ បានចម្លង!' : '✅ Copied!';
+    toast.innerHTML = currentLang === 'km' ? '<tg-emoji emoji-id="5904704361182798355">✅</tg-emoji> បានចម្លង!' : '<tg-emoji emoji-id="5904704361182798355">✅</tg-emoji> Copied!';
     document.body.appendChild(toast);
   }
   toast.classList.add('show');
@@ -402,24 +397,23 @@ async function refreshLiveField(fieldId, orderId){
 function deliveryBlocksHTML(orderId, fields){
   if(!fields) return '';
   let html = '';
-  if(fields.login_name) html += copyFieldHTML('👤 ' + (currentLang==='km'?'ឈ្មោះគណនី':'Account Name'), fields.login_name);
-  if(fields.login_password) html += copyFieldHTML('🔑 ' + (currentLang==='km'?'លេខសម្ងាត់':'Password'), fields.login_password);
+  if(fields.login_name) html += copyFieldHTML('<tg-emoji emoji-id="5258011929993026890">👤</tg-emoji> ' + (currentLang==='km'?'ឈ្មោះគណនី':'Account Name'), fields.login_name);
+  if(fields.login_password) html += copyFieldHTML('<tg-emoji emoji-id="5420094143089111506">🔑</tg-emoji> ' + (currentLang==='km'?'លេខសម្ងាត់':'Password'), fields.login_password);
   if(fields.has_totp && fields.totp_secret){
-    html += copyFieldHTML('🔐 ' + (currentLang==='km'?'Authenticator Key (ពេញ)':'Authenticator Key (full)'), fields.totp_secret);
-    html += copyFieldHTML('⚡ ' + (currentLang==='km'?'លេខកូដលឿន (Live)':'Fast code (Live)'), '000 000', {big:true, refreshable:true, orderId, id:'live-'+orderId});
+    html += copyFieldHTML('<tg-emoji emoji-id="6109136102868652214">🔐</tg-emoji> ' + (currentLang==='km'?'Authenticator Key (ពេញ)':'Authenticator Key (full)'), fields.totp_secret);
+    html += copyFieldHTML('<tg-emoji emoji-id="6107022708376082350">⚡</tg-emoji> ' + (currentLang==='km'?'លេខកូដលឿន (Live)':'Fast code (Live)'), '000 000', {big:true, refreshable:true, orderId, id:'live-'+orderId});
   }
   if(!fields.login_name && !fields.login_password && fields.delivery_note){
-    html += copyFieldHTML('📦 ' + (currentLang==='km'?'ព័ត៌មានប្រគល់ជូន':'Delivery note'), fields.delivery_note);
+    html += copyFieldHTML('<tg-emoji emoji-id="5854908544712707500">📦</tg-emoji> ' + (currentLang==='km'?'ព័ត៌មានប្រគល់ជូន':'Delivery note'), fields.delivery_note);
   }
   html += `
     <div class="copy-field guide-link" onclick="event.stopPropagation(); openGuideSheet();">
       <div>
-        <div class="cf-label" style="margin-bottom:2px;">📲 ${currentLang==='km'?'ជំហានទាំងអស់':'Full guide'}</div>
+        <div class="cf-label" style="margin-bottom:2px;"><tg-emoji emoji-id="5406809207947142040">📲</tg-emoji> ${currentLang==='km'?'ជំហានទាំងអស់':'Full guide'}</div>
         <div class="cf-value">${t('how_to_login_full') || 'How to install & log in'}</div>
       </div>
       <span class="muted">›</span>
     </div>`;
-  // auto-load the live code once, right after render
   if(fields.has_totp) setTimeout(() => refreshLiveField('cf-live-' + orderId, orderId), 50);
   return html;
 }
@@ -436,8 +430,8 @@ function toggleSong(){
   const audio = document.getElementById('bg-music');
   const btn = document.getElementById('song-toggle');
   musicPlaying = !musicPlaying;
-  if(musicPlaying){ audio.play().catch(()=>{}); btn.textContent = '🔊 ' + t('song') + ' ON'; }
-  else{ audio.pause(); btn.textContent = '🔈 ' + t('song') + ' OFF'; }
+  if(musicPlaying){ audio.play().catch(()=>{}); btn.innerHTML = '🔊 ' + t('song') + ' ON'; }
+  else{ audio.pause(); btn.innerHTML = '<tg-emoji emoji-id="5388632425314140043">🔈</tg-emoji> ' + t('song') + ' OFF'; }
   haptic('light');
 }
 
@@ -448,3 +442,4 @@ document.addEventListener('DOMContentLoaded', () => {
   loadCatalog();
   switchTab('shop');
 });
+```[cite: 1, 10]
