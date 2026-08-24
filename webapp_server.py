@@ -224,11 +224,13 @@ def api_order_status(order_id):
             is_stale = False
 
     item = db.get_item(order["item_id"])
+    fields = utils.get_delivery_fields(item) if order["status"] == "approved" and item else {}
     return jsonify({
         "status": order["status"],
         "is_stale": is_stale,
         "item_name": item["name"] if item else "",
         "delivery_info": utils.build_delivery_message(item) if order["status"] == "approved" and item else "",
+        "fields": fields,  # {login_name, login_password, totp_secret, delivery_note, has_totp}
         "has_totp": utils.has_totp(item) if item else False,
         "warranty_expires_at": (
             time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(order["warranty_expires_at"]))
@@ -305,7 +307,9 @@ def api_admin_items():
         description=request.form.get("description", ""),
         quantity=1 if is_account else int(request.form.get("quantity", 0)),
         warranty_days=int(request.form.get("warranty_days", 14)) if is_account else 0,
-        delivery_info=request.form.get("delivery_info", ""),
+        login_name=request.form.get("login_name", ""),
+        login_password=request.form.get("login_password", ""),
+        delivery_info=request.form.get("delivery_info", ""),  # generic note, mainly for trade items
         totp_secret=request.form.get("totp_secret", ""),
         photo_path=photo_path, video_path=video_path,
         published=0,  # always starts as a draft — release via /release or the panel
