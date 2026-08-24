@@ -66,13 +66,19 @@ def generate_totp_code(secret: str) -> str:
 # if the item actually has one — no confusing extra steps otherwise.
 # ============================================================
 def build_delivery_message(item: dict) -> str:
+    """Plain-text version, used for the Telegram bot chat message."""
     lines = []
     if item["category"] == "Account":
-        if item.get("delivery_info"):
+        if item.get("login_name") or item.get("login_password"):
+            if item.get("login_name"):
+                lines.append(f"👤 Name: {item['login_name']}")
+            if item.get("login_password"):
+                lines.append(f"🔑 Password: {item['login_password']}")
+        elif item.get("delivery_info"):  # legacy fallback for older rows
             lines.append(item["delivery_info"])
         if item.get("totp_secret"):
             secret = item["totp_secret"].replace(" ", "").upper()
-            lines.append(f"\n🔑 Authenticator Setup Key (វាយបញ្ចូល App ដោយខ្លួនឯង):\n{secret}")
+            lines.append(f"\n🔐 Authenticator Setup Key (វាយបញ្ចូល App ដោយខ្លួនឯង):\n{secret}")
             lines.append(
                 "\n👉 បើកលឿន? Copy លេខកូដ 6 ខ្ទង់ដែលកំពុង Live ក្នុង App ដោយផ្ទាល់ "
                 "(មិនចាំបាច់ដំឡើង Authenticator ខ្លួនឯងទេ)\n"
@@ -87,6 +93,18 @@ def build_delivery_message(item: dict) -> str:
         else:
             lines.append("ទំនិញនេះនឹងប្រគល់ជូនផ្ទាល់ក្នុងហ្គេម — Admin នឹងទាក់ទងអ្នកឆាប់ៗនេះ។")
     return "\n".join(lines)
+
+
+def get_delivery_fields(item: dict) -> dict:
+    """Structured version for the Mini App — five separate, individually
+    copyable fields instead of one text blob."""
+    return {
+        "login_name": item.get("login_name") or "",
+        "login_password": item.get("login_password") or "",
+        "totp_secret": (item.get("totp_secret") or "").replace(" ", "").upper(),
+        "delivery_note": item.get("delivery_info") or "",  # trade items / legacy fallback text
+        "has_totp": has_totp(item),
+    }
 
 
 def has_totp(item: dict) -> bool:
