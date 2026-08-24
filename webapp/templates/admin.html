@@ -1,211 +1,266 @@
-"""
-admin_bot.py — Uchiro Store (owner-only bot)
-Kept minimal on purpose — adding items, approving orders, and viewing
-stock all happen in the Admin Mini App panel now. This bot only keeps
-the things that are genuinely easier as a chat command: creating
-coupons, broadcasting to buyers, and a quick /stats check.
-"""
+<!DOCTYPE html>
+<html lang="km">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<title>Uchiro Admin</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Khmer:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('assets', filename='style.css') }}">
+<style>
+body{font-family:'Noto Sans Khmer','Inter',-apple-system,sans-serif;}
+.stat-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;}
+.stat-card{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px;}
+.stat-card .num{font-family:var(--font-display); font-size:24px; margin-top:4px;}
+table{width:100%; border-collapse:collapse; font-size:12px;}
+th{text-align:left; color:var(--slate); font-family:var(--font-mono); font-weight:400; font-size:10px; text-transform:uppercase; padding:8px 4px; border-bottom:1px solid var(--line);}
+td{padding:9px 4px; border-bottom:1px solid var(--line); vertical-align:middle;}
+.status-chip{font-family:var(--font-mono); font-size:10px; padding:3px 8px; border-radius:999px;}
+.chip-pending{background:rgba(255,178,48,.15); color:var(--amber);}
+.chip-approved{background:rgba(62,207,142,.15); color:var(--mint);}
+.mini-btn{background:var(--surface-2); border:1px solid var(--line); color:var(--slate); border-radius:7px; padding:6px 11px; font-size:11px;}
+</style>
+</head>
+<body>
 
-import asyncio
-import logging
-from telegram import Update, WebAppInfo, InlineKeyboardMarkup, InlineKeyboardButton, Bot
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
+<div id="app">
+  <div class="topbar">
+    <div class="brand"><span class="mark">U</span> Admin Panel</div>
+    <div class="pill"><span class="status-dot status-live"></span>Bots online</div>
+  </div>
 
-import database as db
-import services
-from config import ADMIN_BOT_TOKEN, STORE_BOT_TOKEN, WEBAPP_URL
+  <!-- ===================== DASHBOARD ===================== -->
+  <div id="screen-dash" class="screen">
+    <div class="eyebrow" style="justify-content:flex-start; margin-bottom:12px;">ថ្ងៃនេះ</div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="muted" style="font-size:11px;">Order កំពុងរង់ចាំ</div><div class="num" id="s-pending">-</div></div>
+      <div class="stat-card"><div class="muted" style="font-size:11px;">Order អនុម័តរួច</div><div class="num" id="s-approved">-</div></div>
+      <div class="stat-card"><div class="muted" style="font-size:11px;">ស្តុកសរុប</div><div class="num" id="s-items">-</div></div>
+      <div class="stat-card"><div class="muted" style="font-size:11px;">Coupon កំពុងដំណើរការ</div><div class="num" id="s-coupons">-</div></div>
+    </div>
+    <div class="order-card">
+      <div style="font-weight:700; margin-bottom:6px; font-size:13px;">ទំនិញនៅជា Draft</div>
+      <p class="muted" style="font-size:12px; margin-bottom:12px;" id="draft-note"></p>
+      <button class="mini-btn" style="width:100%; padding:10px;" onclick="releaseAll()">🚀 Release all drafts</button>
+    </div>
+  </div>
 
-logging.basicConfig(level=logging.INFO)
+  <!-- ===================== ORDERS ===================== -->
+  <div id="screen-orders" class="screen hidden">
+    <div class="eyebrow" style="justify-content:flex-start; margin-bottom:12px;">Order កំពុងរង់ចាំ</div>
+    <div id="admin-orders"></div>
+  </div>
 
+  <!-- ===================== PRODUCTS ===================== -->
+  <div id="screen-products" class="screen hidden">
+    <div class="row-between" style="margin-bottom:12px;">
+      <div class="eyebrow" style="justify-content:flex-start;">ទំនិញ</div>
+      <button class="mini-btn" onclick="toggleAddForm()">+ បន្ថែម</button>
+    </div>
 
-def _admin_only(func):
-    async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        if not db.is_admin_id(update.effective_user.id):
-            return await update.message.reply_text("🚫 Owner only.")
-        return await func(update, context)
-    return wrapper
+    <div class="order-card hidden" id="add-form">
+      <div class="field">
+        <label>ប្រភេទផលិតផល</label>
+        <select id="new-kind" onchange="onKindChange()">
+          <option value="account">📦 Account (មានតែ 1)</option>
+          <option value="item">⚡ Item — Fruit/Gamepass/MM2/... (មានស្តុក)</option>
+        </select>
+      </div>
+      <div class="field" id="category-field">
+        <label>ប្រភេទ</label>
+        <select id="new-category">{% for cat in categories %}<option>{{ cat }}</option>{% endfor %}</select>
+      </div>
+      <div class="field"><label>ឈ្មោះ</label><input id="new-name" type="text" placeholder="ឧ. Buddha V2"></div>
+      <div class="field"><label>តម្លៃ ($)</label><input id="new-price" type="number" step="0.01"></div>
 
+      <!-- ITEM ONLY: stock -->
+      <div class="field" id="qty-field"><label>ស្តុក</label><input id="new-qty" type="number" placeholder="ចំនួន"></div>
 
-@_admin_only
-async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not db.is_admin_id(update.effective_user.id):
-        return await update.message.reply_text("🚫 Owner only.")
-    text = (
-        "👋 Uchiro Store — Admin Bot\n\n"
-        "📋 *Command ទាំងអស់:*\n"
-        "/panel — 📊 Admin Panel (add product, approve order, coupons)\n"
-        "/stats — 📈 ស្ថិតិលឿន\n"
-        "/addcoupon — 🏷️ បង្កើត Coupon\n"
-        "/listcoupons — 📋 មើល Coupon\n"
-        "/disablecoupon — 🔴 បិទ Coupon\n"
-        "/broadcast — 📢 ផ្សព្វផ្សាយសារ\n"
-        "/help — 💬 ពន្យល់លម្អិត\n\n"
-        "ចុចប៊ូតុងខាងក្រោមដើម្បីបើក Panel ភ្លាមៗ 👇"
-    )
-    kb = InlineKeyboardMarkup([[InlineKeyboardButton(
-        "📊 Open Admin Panel", web_app=WebAppInfo(url=f"{WEBAPP_URL}/admin"))]]) if WEBAPP_URL else None
-    await update.message.reply_text(text, parse_mode="Markdown", reply_markup=kb)
+      <!-- ACCOUNT ONLY: warranty + credentials + video -->
+      <div id="account-fields" class="hidden">
+        <div class="field">
+          <label>Warranty</label>
+          <select id="new-warranty">
+            <option value="7">7 ថ្ងៃ</option>
+            <option value="14" selected>14 ថ្ងៃ (ស្តង់ដារ)</option>
+            <option value="30">30 ថ្ងៃ</option>
+          </select>
+        </div>
+        <div class="field"><label>ពិពណ៌នា/លម្អិតគណនី (Caption)</label><textarea id="new-desc" rows="3" placeholder="ឧ. Blox Fruits Dragon Awakened, Max Melee..."></textarea></div>
+        <div class="field"><label>Login name (ទុកទទេ = មិនទាន់មាន)</label><input id="new-login" type="text"></div>
+        <div class="field"><label>Password (ទុកទទេ = មិនទាន់មាន)</label><input id="new-password" type="text"></div>
+        <div class="field"><label>Authenticator secret key (ទុកទទេ = មិនប្រើ 2FA)</label><input id="new-totp" type="text"></div>
+        <div class="field"><label>រូបភាពគណនី</label><input id="new-photo" type="file" accept="image/*"></div>
+        <div class="field"><label>វីដេអូគណនី (ស្រេចចិត្ត)</label><input id="new-video" type="file" accept="video/*"></div>
+      </div>
+      <div class="field" id="item-photo-field"><label>រូបភាព</label><input id="new-photo-item" type="file" accept="image/*"></div>
 
+      <button class="mini-btn" style="width:100%; padding:11px;" onclick="addProduct()">រក្សាទុក (Draft — ប្រើ /release ដើម្បី Publish)</button>
+    </div>
 
-@_admin_only
-async def panel_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not WEBAPP_URL:
-        return await update.message.reply_text("⚠️ WEBAPP_URL not set — deploy first, then this button will work.")
-    kb = InlineKeyboardMarkup([[InlineKeyboardButton(
-        "📊 Open Admin Panel", web_app=WebAppInfo(url=f"{WEBAPP_URL}/admin"))]])
-    await update.message.reply_text(
-        "🛠️ Admin Panel — add products, approve orders, manage coupons, all here:",
-        reply_markup=kb)
+    <div id="admin-products"></div>
+  </div>
 
+  <!-- ===================== COUPONS ===================== -->
+  <div id="screen-coupons" class="screen hidden">
+    <div class="eyebrow" style="justify-content:flex-start; margin-bottom:12px;">Coupon</div>
+    <div class="toast-banner" style="margin-bottom:12px;">បន្ថែម Coupon តាម Bot ដោយប្រើ <span class="mono">/addcoupon code percent|fixed amount max_uses</span> — ទីនេះសម្រាប់មើល និងបិទប៉ុណ្ណោះ។</div>
+    <table><thead><tr><th>Code</th><th>Off</th><th>ប្រើ</th><th></th></tr></thead><tbody id="coupons-table"></tbody></table>
+  </div>
 
-@_admin_only
-async def stats_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    total_users = db.count_users()
-    by_status = db.count_orders_by_status()
-    text = (
-        f"📊 *Uchiro Store stats*\n\n"
-        f"👥 Users: `{total_users}`\n"
-        f"⏳ Pending orders: `{by_status.get('pending', 0)}`\n"
-        f"✅ Approved orders: `{by_status.get('approved', 0)}`\n"
-        f"❌ Rejected: `{by_status.get('rejected', 0)}`\n"
-    )
-    await update.message.reply_text(text, parse_mode="Markdown")
+  <div class="tabbar">
+    <button class="tab-btn" data-tab="dash" onclick="switchTab('dash')"><span class="icon">📊</span>Home</button>
+    <button class="tab-btn" data-tab="orders" onclick="switchTab('orders')"><span class="icon">🧾</span>Order</button>
+    <button class="tab-btn" data-tab="products" onclick="switchTab('products')"><span class="icon">📦</span>ទំនិញ</button>
+    <button class="tab-btn" data-tab="coupons" onclick="switchTab('coupons')"><span class="icon">🏷️</span>Coupon</button>
+  </div>
+</div>
 
+<script src="{{ url_for('assets', filename='data.js') }}"></script>
+<script>
+const tg = window.Telegram ? window.Telegram.WebApp : null;
+if(tg){ tg.ready(); tg.expand(); }
 
-@_admin_only
-async def addcoupon_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # /addcoupon CODE percent|fixed AMOUNT MAX_USES
-    args = context.args
-    if len(args) != 4 or args[1] not in ("percent", "fixed"):
-        return await update.message.reply_text(
-            "ប្រើ: /addcoupon CODE percent|fixed AMOUNT MAX_USES\n"
-            "ឧ. /addcoupon FRUIT20 percent 20 50")
-    code, dtype, amount, max_uses = args
-    try:
-        db.add_coupon(code, dtype, float(amount), int(max_uses))
-    except ValueError:
-        return await update.message.reply_text("AMOUNT និង MAX_USES ត្រូវជាលេខ។")
-    await update.message.reply_text(f"✅ Coupon {code.upper()} បានបង្កើត — មើល/បិទបានក្នុង Panel ដែរ។")
+function switchTab(tab){
+  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+  document.getElementById('screen-' + tab).classList.remove('hidden');
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  if(tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+  if(tab === 'products') loadProducts();
+  if(tab === 'orders') loadOrders();
+  if(tab === 'coupons') loadCoupons();
+  if(tab === 'dash') loadDashboard();
+}
 
+/* ---- dashboard (derived from real /api/admin/items + /api/admin/orders + /api/admin/coupons) ---- */
+async function loadDashboard(){
+  try{
+    const [itemsRes, ordersRes, couponsRes] = await Promise.all([API.adminItems(), API.adminOrders(), API.adminCoupons().catch(()=>({coupons:[]}))]);
+    const items = itemsRes.items || [], orders = ordersRes.orders || [];
+    document.getElementById('s-items').textContent = items.reduce((a,i)=>a+(i.quantity||0),0);
+    document.getElementById('s-pending').textContent = orders.filter(o=>o.status==='pending').length;
+    document.getElementById('s-approved').textContent = orders.filter(o=>o.status==='approved').length;
+    document.getElementById('s-coupons').textContent = (couponsRes.coupons||[]).filter(c=>c.active).length;
+    document.getElementById('draft-note').textContent = items.filter(i=>!i.published).length + ' ទំនិញកំពុងជា Draft';
+  }catch(e){}
+}
+async function releaseAll(){
+  const res = await fetch('/api/admin/items/release-all', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ init_data: getInitData() })
+  }).then(r => r.json());
+  if(res.error) return alert(res.error);
+  if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+  alert(`បាន Release ${res.released} ទំនិញ`);
+  loadDashboard();
+}
 
-@_admin_only
-async def listcoupons_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    coupons = db.list_coupons()
-    if not coupons:
-        return await update.message.reply_text("គ្មាន Coupon ទេ។")
-    lines = [
-        f"{'🟢' if c['active'] else '🔴'} `{c['code']}` — "
-        f"{c['amount']:.0f}{'%' if c['discount_type']=='percent' else '$'} off "
-        f"({c['used_count']}/{c['max_uses']})"
-        for c in coupons
-    ]
-    await update.message.reply_text("🏷️ *Coupons:*\n" + "\n".join(lines), parse_mode="Markdown")
+/* ---- orders: real GET, approve/reject via ⚠️NEW /api/admin/orders/<id>/appr|rej ---- */
+async function loadOrders(){
+  const mount = document.getElementById('admin-orders');
+  mount.innerHTML = `<div class="order-card">…</div>`;
+  try{
+    const data = await API.adminOrders();
+    const pending = (data.orders||[]).filter(o=>o.status==='pending');
+    mount.innerHTML = pending.length ? pending.map(o => `
+      <div class="order-card" id="admin-order-${o.id}">
+        <div class="row-between"><div><div class="mono muted" style="font-size:11px;">#${o.id}</div>
+          <div style="font-weight:600; font-size:13px; margin-top:3px;">Item #${o.item_id}</div></div>
+          <span class="status-chip chip-pending">Pending</span></div>
+        <div class="muted" style="font-size:11px; margin-top:6px;">buyer: ${o.buyer_chat_id}</div>
+        ${o.payment_photo_url ? `<img src="${o.payment_photo_url}" class="zoomable" onclick="openLightboxAdmin('${o.payment_photo_url}')" style="width:100%; border-radius:8px; margin-top:8px; max-height:160px; object-fit:cover; cursor:zoom-in;">` : ''}
+        <div class="btn-row">
+          <button class="mini-btn" style="flex:1; background:var(--mint); color:#062617;" onclick="decideOrder(${o.id},'appr')">✅ អនុម័ត</button>
+          <button class="mini-btn" style="flex:1; background:var(--crimson); color:#fff;" onclick="decideOrder(${o.id},'rej')">❌ បដិសេធ</button>
+        </div>
+      </div>`).join('') : `<div class="order-card">គ្មាន Order កំពុងរង់ចាំ 🎉</div>`;
+  }catch(e){
+    mount.innerHTML = `<div class="order-card">Error loading — open via /panel</div>`;
+  }
+}
+function openLightboxAdmin(src){ window.open(src, '_blank'); }
+async function decideOrder(id, action){
+  const res = await API.adminOrderDecision(id, action);
+  if(res.error) return alert(res.error);
+  if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+  document.getElementById('admin-order-' + id).remove();
+}
 
+/* ---- products: conditional Account/Item form ---- */
+function toggleAddForm(){ document.getElementById('add-form').classList.toggle('hidden'); }
+function onKindChange(){
+  const isAccount = document.getElementById('new-kind').value === 'account';
+  document.getElementById('qty-field').classList.toggle('hidden', isAccount);
+  document.getElementById('account-fields').classList.toggle('hidden', !isAccount);
+  document.getElementById('item-photo-field').classList.toggle('hidden', isAccount);
+  document.getElementById('category-field').classList.toggle('hidden', isAccount);
+  if(isAccount) document.getElementById('new-category').value = 'Account';
+}
+onKindChange();
 
-@_admin_only
-async def disablecoupon_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not context.args:
-        return await update.message.reply_text("ប្រើ: /disablecoupon CODE")
-    db.disable_coupon(context.args[0])
-    await update.message.reply_text(f"🔴 Coupon {context.args[0].upper()} បិទរួច។")
+async function addProduct(){
+  const isAccount = document.getElementById('new-kind').value === 'account';
+  const form = new FormData();
+  form.append('category', isAccount ? 'Account' : document.getElementById('new-category').value);
+  form.append('name', document.getElementById('new-name').value);
+  form.append('price', document.getElementById('new-price').value);
+  if(isAccount){
+    form.append('quantity', 1); // Account is always single — never asks stock
+    form.append('warranty_days', document.getElementById('new-warranty').value);
+    form.append('description', document.getElementById('new-desc').value);
+    form.append('login_name', document.getElementById('new-login').value);
+    form.append('login_password', document.getElementById('new-password').value);
+    const totp = document.getElementById('new-totp').value.trim();
+    if(totp) form.append('totp_secret', totp);
+    const photo = document.getElementById('new-photo').files[0];
+    if(photo) form.append('photo', photo);
+    const video = document.getElementById('new-video').files[0]; // ⚠️NEW field, needs backend support
+    if(video) form.append('video', video);
+  }else{
+    form.append('quantity', document.getElementById('new-qty').value);
+    const photo = document.getElementById('new-photo-item').files[0];
+    if(photo) form.append('photo', photo);
+  }
+  const res = await API.adminCreateItem(form);
+  if(res.error) return alert('Error: ' + res.error);
+  toggleAddForm();
+  loadProducts();
+}
+async function loadProducts(){
+  const mount = document.getElementById('admin-products');
+  mount.innerHTML = `<div class="order-card">…</div>`;
+  try{
+    const data = await API.adminItems();
+    mount.innerHTML = (data.items||[]).map(p => `
+      <div class="order-card">
+        <div class="row-between">
+          <div><div style="font-weight:600; font-size:13px;">${p.name}</div><div class="muted mono" style="font-size:11px; margin-top:3px;">${p.category} · #${p.id}${!p.published ? ' · 📝Draft' : ''}</div></div>
+          <div style="text-align:right;"><div class="mono" style="font-weight:700;">$${p.price}</div><div class="muted mono" style="font-size:11px;">${p.category==='Account' ? '' : p.quantity + ' left'}</div></div>
+        </div>
+      </div>`).join('');
+  }catch(e){ mount.innerHTML = `<div class="order-card">Error — open via /panel</div>`; }
+}
 
+/* ---- coupons: real GET via ⚠️NEW /api/admin/coupons, disable via ⚠️NEW route ---- */
+async function loadCoupons(){
+  const tbody = document.getElementById('coupons-table');
+  try{
+    const data = await API.adminCoupons();
+    tbody.innerHTML = (data.coupons||[]).map(c => `
+      <tr><td class="mono">${c.code}</td><td>${c.discount_type==='percent'?c.amount+'%':'$'+c.amount}</td>
+        <td class="mono">${c.used_count}/${c.max_uses}</td>
+        <td><button class="mini-btn" onclick="closeCoupon('${c.code}')">${c.active ? 'បិទ' : '🔴'}</button></td></tr>`).join('');
+  }catch(e){
+    tbody.innerHTML = `<tr><td colspan="4" class="muted">Needs /api/admin/coupons route — see backend patch notes</td></tr>`;
+  }
+}
+async function closeCoupon(code){
+  const res = await API.adminDisableCoupon(code);
+  if(res.error) return alert(res.error);
+  loadCoupons();
+}
 
-@_admin_only
-async def broadcast_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    message_text = " ".join(context.args) if context.args else None
-    if not message_text:
-        return await update.message.reply_text(
-            "ប្រើ: /broadcast <សារ>\n\nឧ. /broadcast 🎉 មានទំនិញថ្មី! ចូលមើលឥឡូវ")
-
-    user_ids = db.all_user_ids()
-    await update.message.reply_text(f"កំពុងផ្ញើទៅ {len(user_ids)} នាក់…")
-
-    store_bot = Bot(token=STORE_BOT_TOKEN)
-    sent, failed = 0, 0
-    for i in range(0, len(user_ids), 25):
-        for uid in user_ids[i:i + 25]:
-            try:
-                await store_bot.send_message(uid, f"📢 {message_text}")
-                sent += 1
-            except Exception:
-                failed += 1
-        await asyncio.sleep(1)
-    await update.message.reply_text(f"✅ ជោគជ័យ: {sent}, បរាជ័យ: {failed}")
-
-
-async def order_decision_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handles the ✅/❌ buttons on the order notification message. Uses the
-    exact same services.approve_order/reject_order the panel calls, so a
-    decision made here or in the panel can never disagree with each other."""
-    query = update.callback_query
-    await query.answer()
-    if not db.is_admin_id(query.from_user.id):
-        return await query.answer("Owner only.", show_alert=True)
-
-    action, order_id_str = query.data.split("_", 1)
-    order_id = int(order_id_str)
-
-    if action == "appr":
-        ok = services.approve_order(order_id)
-        result_text = "✅ អនុម័តរួច — ប្រគល់ជូនរួច" if ok else "⚠️ Order នេះត្រូវបានដោះស្រាយរួចហើយ"
-    else:
-        ok = services.reject_order(order_id)
-        result_text = "❌ បដិសេធរួច" if ok else "⚠️ Order នេះត្រូវបានដោះស្រាយរួចហើយ"
-
-    await query.edit_message_text(query.message.text + f"\n\n{result_text}")
-
-
-async def _post_init(application: Application):
-    from telegram import BotCommand
-    await application.bot.set_my_commands([
-        BotCommand("panel", "📊 Admin Panel"),
-        BotCommand("help", "💬 Command ទាំងអស់"),
-        BotCommand("stats", "📈 Stats"),
-        BotCommand("addcoupon", "🏷️ បង្កើត Coupon"),
-        BotCommand("listcoupons", "📋 មើល Coupon ទាំងអស់"),
-        BotCommand("disablecoupon", "🔴 បិទ Coupon"),
-        BotCommand("broadcast", "📢 ផ្សព្វផ្សាយសារ"),
-    ])
-
-
-@_admin_only
-async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = (
-        "🛠️ *Admin Bot — Commands:*\n\n"
-        "/panel — 📊 បើក Admin Panel (add product, approve orders, coupons)\n"
-        "/stats — 📈 មើលស្ថិតិលឿន (users, orders)\n"
-        "/addcoupon — 🏷️ បង្កើត Coupon (CODE percent|fixed AMOUNT MAX_USES)\n"
-        "/listcoupons — 📋 មើល Coupon ទាំងអស់\n"
-        "/disablecoupon — 🔴 បិទ Coupon (CODE)\n"
-        "/broadcast — 📢 ផ្សព្វផ្សាយសារទៅអ្នកទិញទាំងអស់\n\n"
-        "🔧 Item add/edit, order approve/reject, and coupon view/close all live in /panel — "
-        "this bot stays for the quick chat-only actions."
-    )
-    await update.message.reply_text(text, parse_mode="Markdown")
-
-
-async def unknown_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not db.is_admin_id(update.effective_user.id):
-        return  # stay silent to non-admins poking at commands
-    await update.message.reply_text(
-        f"❓ មិនស្គាល់ Command នេះទេ: {update.message.text}\n\nវាយ /help ដើម្បីមើល Command ទាំងអស់។")
-
-
-def build_app():
-    application = Application.builder().token(ADMIN_BOT_TOKEN).post_init(_post_init).build()
-    application.add_handler(CommandHandler("start", start_cmd))
-    application.add_handler(CommandHandler("panel", panel_cmd))
-    application.add_handler(CommandHandler("help", help_cmd))
-    application.add_handler(CommandHandler("stats", stats_cmd))
-    application.add_handler(CommandHandler("addcoupon", addcoupon_cmd))
-    application.add_handler(CommandHandler("listcoupons", listcoupons_cmd))
-    application.add_handler(CommandHandler("disablecoupon", disablecoupon_cmd))
-    application.add_handler(CommandHandler("broadcast", broadcast_cmd))
-    application.add_handler(CallbackQueryHandler(order_decision_callback, pattern=r"^(appr|rej)_\d+$"))
-    application.add_handler(MessageHandler(filters.COMMAND, unknown_cmd))  # must be LAST — catches unrecognized /commands
-    return application
-
-
-if __name__ == "__main__":
-    db.init_db()
-    build_app().run_polling()
+document.addEventListener('DOMContentLoaded', () => switchTab('dash'));
+</script>
+</body>
+</html>
