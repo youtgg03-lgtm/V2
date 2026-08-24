@@ -41,7 +41,7 @@ td{padding:9px 4px; border-bottom:1px solid var(--line); vertical-align:middle;}
     <div class="order-card">
       <div style="font-weight:700; margin-bottom:6px; font-size:13px;">ទំនិញនៅជា Draft</div>
       <p class="muted" style="font-size:12px; margin-bottom:12px;" id="draft-note"></p>
-      <button class="mini-btn" style="width:100%; padding:10px;" onclick="releaseAll()">🚀 Release all drafts</button>
+      <button class="mini-btn" style="width:100%; padding:10px;" onclick="releaseAll()"><tg-emoji emoji-id="6300989332748506061">🚀</tg-emoji> Release all drafts</button>
     </div>
   </div>
 
@@ -109,10 +109,10 @@ td{padding:9px 4px; border-bottom:1px solid var(--line); vertical-align:middle;}
   </div>
 
   <div class="tabbar">
-    <button class="tab-btn" data-tab="dash" onclick="switchTab('dash')"><span class="icon">📊</span>Home</button>
-    <button class="tab-btn" data-tab="orders" onclick="switchTab('orders')"><span class="icon">🧾</span>Order</button>
-    <button class="tab-btn" data-tab="products" onclick="switchTab('products')"><span class="icon">📦</span>ទំនិញ</button>
-    <button class="tab-btn" data-tab="coupons" onclick="switchTab('coupons')"><span class="icon">🏷️</span>Coupon</button>
+    <button class="tab-btn" data-tab="dash" onclick="switchTab('dash')"><span class="icon"><tg-emoji emoji-id="5231200819986047254">📊</tg-emoji></span>Home</button>
+    <button class="tab-btn" data-tab="orders" onclick="switchTab('orders')"><span class="icon"><tg-emoji emoji-id="5264959791213586839">🧾</tg-emoji></span>Order</button>
+    <button class="tab-btn" data-tab="products" onclick="switchTab('products')"><span class="icon"><tg-emoji emoji-id="5854908544712707500">📦</tg-emoji></span>ទំនិញ</button>
+    <button class="tab-btn" data-tab="coupons" onclick="switchTab('coupons')"><span class="icon"><tg-emoji emoji-id="5298877105000439431">🏷️</tg-emoji></span>Coupon</button>
   </div>
 </div>
 
@@ -155,7 +155,7 @@ async function releaseAll(){
   loadDashboard();
 }
 
-/* ---- orders: real GET, approve/reject via ⚠️NEW /api/admin/orders/<id>/appr|rej ---- */
+/* ---- orders: real GET, approve/reject via /api/admin/orders/<id>/appr|rej ---- */
 async function loadOrders(){
   const mount = document.getElementById('admin-orders');
   mount.innerHTML = `<div class="order-card">…</div>`;
@@ -170,10 +170,10 @@ async function loadOrders(){
         <div class="muted" style="font-size:11px; margin-top:6px;">buyer: ${o.buyer_chat_id}</div>
         ${o.payment_photo_url ? `<img src="${o.payment_photo_url}" class="zoomable" onclick="openLightboxAdmin('${o.payment_photo_url}')" style="width:100%; border-radius:8px; margin-top:8px; max-height:160px; object-fit:cover; cursor:zoom-in;">` : ''}
         <div class="btn-row">
-          <button class="mini-btn" style="flex:1; background:var(--mint); color:#062617;" onclick="decideOrder(${o.id},'appr')">✅ អនុម័ត</button>
-          <button class="mini-btn" style="flex:1; background:var(--crimson); color:#fff;" onclick="decideOrder(${o.id},'rej')">❌ បដិសេធ</button>
+          <button class="mini-btn" style="flex:1; background:var(--mint); color:#062617;" onclick="decideOrder(${o.id},'appr')"><tg-emoji emoji-id="5904704361182798355">✅</tg-emoji> អនុម័ត</button>
+          <button class="mini-btn" style="flex:1; background:var(--crimson); color:#fff;" onclick="decideOrder(${o.id},'rej')"><tg-emoji emoji-id="6300696192640620174">❌</tg-emoji> បដិសេធ</button>
         </div>
-      </div>`).join('') : `<div class="order-card">គ្មាន Order កំពុងរង់ចាំ 🎉</div>`;
+      </div>`).join('') : `<div class="order-card">គ្មាន Order កំពុងរង់ចាំ <tg-emoji emoji-id="6107318416874410520">🎉</tg-emoji></div>`;
   }catch(e){
     mount.innerHTML = `<div class="order-card">Error loading — open via /panel</div>`;
   }
@@ -205,7 +205,7 @@ async function addProduct(){
   form.append('name', document.getElementById('new-name').value);
   form.append('price', document.getElementById('new-price').value);
   if(isAccount){
-    form.append('quantity', 1); // Account is always single — never asks stock
+    form.append('quantity', 1);
     form.append('warranty_days', document.getElementById('new-warranty').value);
     form.append('description', document.getElementById('new-desc').value);
     form.append('login_name', document.getElementById('new-login').value);
@@ -214,7 +214,7 @@ async function addProduct(){
     if(totp) form.append('totp_secret', totp);
     const photo = document.getElementById('new-photo').files[0];
     if(photo) form.append('photo', photo);
-    const video = document.getElementById('new-video').files[0]; // ⚠️NEW field, needs backend support
+    const video = document.getElementById('new-video').files[0];
     if(video) form.append('video', video);
   }else{
     form.append('quantity', document.getElementById('new-qty').value);
@@ -234,14 +234,14 @@ async function loadProducts(){
     mount.innerHTML = (data.items||[]).map(p => `
       <div class="order-card">
         <div class="row-between">
-          <div><div style="font-weight:600; font-size:13px;">${p.name}</div><div class="muted mono" style="font-size:11px; margin-top:3px;">${p.category} · #${p.id}${!p.published ? ' · 📝Draft' : ''}</div></div>
+          <div><div style="font-weight:600; font-size:13px;">${p.name}</div><div class="muted mono" style="font-size:11px; margin-top:3px;">${p.category} · #${p.id}${!p.published ? ' · <tg-emoji emoji-id="5837003105228558796">📝</tg-emoji>Draft' : ''}</div></div>
           <div style="text-align:right;"><div class="mono" style="font-weight:700;">$${p.price}</div><div class="muted mono" style="font-size:11px;">${p.category==='Account' ? '' : p.quantity + ' left'}</div></div>
         </div>
       </div>`).join('');
   }catch(e){ mount.innerHTML = `<div class="order-card">Error — open via /panel</div>`; }
 }
 
-/* ---- coupons: real GET via ⚠️NEW /api/admin/coupons, disable via ⚠️NEW route ---- */
+/* ---- coupons: real GET via /api/admin/coupons, disable via route ---- */
 async function loadCoupons(){
   const tbody = document.getElementById('coupons-table');
   try{
@@ -249,7 +249,7 @@ async function loadCoupons(){
     tbody.innerHTML = (data.coupons||[]).map(c => `
       <tr><td class="mono">${c.code}</td><td>${c.discount_type==='percent'?c.amount+'%':'$'+c.amount}</td>
         <td class="mono">${c.used_count}/${c.max_uses}</td>
-        <td><button class="mini-btn" onclick="closeCoupon('${c.code}')">${c.active ? 'បិទ' : '🔴'}</button></td></tr>`).join('');
+        <td><button class="mini-btn" onclick="closeCoupon('${c.code}')">${c.active ? 'បិទ' : '<tg-emoji emoji-id="6170475670443922913">🔴</tg-emoji>'}</button></td></tr>`).join('');
   }catch(e){
     tbody.innerHTML = `<tr><td colspan="4" class="muted">Needs /api/admin/coupons route — see backend patch notes</td></tr>`;
   }
@@ -264,3 +264,4 @@ document.addEventListener('DOMContentLoaded', () => switchTab('dash'));
 </script>
 </body>
 </html>
+```[cite: 1, 12]
