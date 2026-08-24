@@ -57,18 +57,21 @@ const API = {
 };
 
 /* ============================================================
-   Category emoji — one place to edit when you swap these for
-   Telegram Premium emoji later (just change the values below).
+   Category emoji — custom Telegram Premium emoji tags
    ============================================================ */
 const CATEGORY_EMOJI = {
-  "Account": "👑", "Fruit": "🍈", "Gamepass": "🎫", "Evade": "🏃",
-  "Robux": "💎", "Blade Ball": "⚔️", "MM2": "🔪",
+  "Account": '<tg-emoji emoji-id="5310070232155436036">👑</tg-emoji>',
+  "Fruit": '<tg-emoji emoji-id="6084765169940961891">🍈</tg-emoji>',
+  "Gamepass": '<tg-emoji emoji-id="6301052490242597458">🎫</tg-emoji>',
+  "Evade": '<tg-emoji emoji-id="5210965493887819972">🏃</tg-emoji>',
+  "Robux": '<tg-emoji emoji-id="5202189539967267386">💎</tg-emoji>',
+  "Blade Ball": '<tg-emoji emoji-id="5408935401442267103">⚔️</tg-emoji>',
+  "MM2": '<tg-emoji emoji-id="5242288969550422350">🔪</tg-emoji>',
 };
-function categoryEmoji(cat){ return CATEGORY_EMOJI[cat] || "📦"; }
+function categoryEmoji(cat){ return CATEGORY_EMOJI[cat] || '<tg-emoji emoji-id="5854908544712707500">📦</tg-emoji>'; }
 
 /* ============================================================
-   KH / EN dictionary — small, only the strings that actually
-   appear in the UI. Switch with setLang('km' | 'en').
+   KH / EN dictionary — updated with custom Premium emojis
    ============================================================ */
 const I18N = {
   en: {
@@ -78,7 +81,7 @@ const I18N = {
     checkout: "Checkout", total: "Total", upload_screenshot: "Upload payment screenshot",
     no_screenshot: "No screenshot selected yet", submit_order: "Submit order",
     coupon_code: "Coupon code", apply: "Apply",
-    waiting: "Waiting for confirmation…", delivered: "Delivered ✅", rejected: "Order rejected",
+    waiting: "Waiting for confirmation…", delivered: 'Delivered <tg-emoji emoji-id="5904704361182798355">✅</tg-emoji>', rejected: "Order rejected",
     not_confirmed: "Not confirmed — contact admin", check_my_account: "Check my account",
     back_home: "Back to home", view_orders: "View my orders",
     delivery_details: "Delivery details", live_code: "Live authenticator code", refresh: "Refresh",
@@ -94,7 +97,7 @@ const I18N = {
     checkout: "ទូទាត់", total: "សរុប", upload_screenshot: "Upload រូបភាពទូទាត់",
     no_screenshot: "មិនទាន់ជ្រើសរើសរូបភាពទេ", submit_order: "ដាក់ស្នើការបញ្ជាទិញ",
     coupon_code: "លេខកូដបញ្ចុះតម្លៃ", apply: "ប្រើ",
-    waiting: "កំពុងរង់ចាំបញ្ជាក់…", delivered: "ប្រគល់ជូនរួច ✅", rejected: "Order មិនត្រូវបានអនុម័ត",
+    waiting: "កំពុងរង់ចាំបញ្ជាក់…", delivered: 'ប្រគល់ជូនរួច <tg-emoji emoji-id="5904704361182798355">✅</tg-emoji>', rejected: "Order មិនត្រូវបានអនុម័ត",
     not_confirmed: "មិនទាន់បញ្ជាក់ — ទាក់ទង Admin", check_my_account: "មើលគណនីរបស់ខ្ញុំ",
     back_home: "ត្រឡប់ទៅដើម", view_orders: "មើលការបញ្ជាទិញរបស់ខ្ញុំ",
     delivery_details: "ព័ត៌មានប្រគល់ជូន", live_code: "លេខកូដផ្ទាល់", refresh: "ធ្វើឲ្យស្រស់",
@@ -109,3 +112,4 @@ function t(key, ...args){
   const val = (I18N[currentLang] && I18N[currentLang][key]) || I18N.en[key] || key;
   return typeof val === 'function' ? val(...args) : val;
 }
+```[cite: 1, 11]
