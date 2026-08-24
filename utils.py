@@ -18,13 +18,6 @@ from config import (
 )
 
 
-# ============================================================
-# Telegram WebApp initData verification
-# Standard algorithm from Telegram's own docs — validates that the
-# initData string genuinely came from Telegram for this bot token,
-# and wasn't forged by the client.
-# https://core.telegram.org/bots/webapps#validating-data-received-via-the-web-app
-# ============================================================
 def verify_webapp_init_data(init_data: str, bot_token: str, max_age_seconds: int = 86400):
     if not init_data or not bot_token:
         return None
@@ -51,42 +44,34 @@ def verify_webapp_init_data(init_data: str, bot_token: str, max_age_seconds: int
         return None
 
 
-# ============================================================
-# TOTP — real, standard 6-digit authenticator codes (pyotp)
-# ============================================================
 def generate_totp_code(secret: str) -> str:
     if not secret:
         return ""
     return pyotp.TOTP(secret.replace(" ", "").upper()).now()
 
 
-# ============================================================
-# Delivery message — built once, shown identically on the website,
-# Mini App, and inside the bot chat. Only mentions the authenticator
-# if the item actually has one — no confusing extra steps otherwise.
-# ============================================================
 def build_delivery_message(item: dict) -> str:
-    """Plain-text version, used for the Telegram bot chat message."""
+    """HTML-formatted version, used for the Telegram bot chat message with premium emojis."""
     lines = []
     if item["category"] == "Account":
         if item.get("login_name") or item.get("login_password"):
             if item.get("login_name"):
-                lines.append(f"👤 Name: {item['login_name']}")
+                lines.append(f'<tg-emoji emoji-id="5258011929993026890">👤</tg-emoji> Name: <code>{item["login_name"]}</code>')
             if item.get("login_password"):
-                lines.append(f"🔑 Password: {item['login_password']}")
-        elif item.get("delivery_info"):  # legacy fallback for older rows
+                lines.append(f'<tg-emoji emoji-id="5420094143089111506">🔑</tg-emoji> Password: <code>{item["login_password"]}</code>')
+        elif item.get("delivery_info"):
             lines.append(item["delivery_info"])
         if item.get("totp_secret"):
             secret = item["totp_secret"].replace(" ", "").upper()
-            lines.append(f"\n🔐 Authenticator Setup Key (វាយបញ្ចូល App ដោយខ្លួនឯង):\n{secret}")
+            lines.append(f'\n<tg-emoji emoji-id="6109136102868652214">🔐</tg-emoji> Authenticator Setup Key (វាយបញ្ចូល App ដោយខ្លួនឯង):\n<code>{secret}</code>')
             lines.append(
-                "\n👉 បើកលឿន? Copy លេខកូដ 6 ខ្ទង់ដែលកំពុង Live ក្នុង App ដោយផ្ទាល់ "
+                '\n<tg-emoji emoji-id="5470177992950946662">👉</tg-emoji> បើកលឿន? Copy លេខកូដ 6 ខ្ទង់ដែលកំពុង Live ក្នុង App ដោយផ្ទាល់ '
                 "(មិនចាំបាច់ដំឡើង Authenticator ខ្លួនឯងទេ)\n"
-                f"🔐 លេខកូដឥឡូវនេះ: {generate_totp_code(item['totp_secret'])}"
+                f'<tg-emoji emoji-id="6109136102868652214">🔐</tg-emoji> លេខកូដឥឡូវនេះ: <code>{generate_totp_code(item["totp_secret"])}</code>'
             )
             lines.append("(ចូល Telegram → ការបញ្ជាទិញរបស់ខ្ញុំ → Refresh ដើម្បីទទួលបានលេខកូដថ្មីរាល់ 30 វិនាទី)")
         warranty = item.get("warranty_days") or WARRANTY_DAYS_NO_AUTH
-        lines.append(f"\n🛡️ Warranty: {warranty} ថ្ងៃ គិតពីពេលទទួល")
+        lines.append(f'\n<tg-emoji emoji-id="5251203410396458957">🛡️</tg-emoji> Warranty: {warranty} ថ្ងៃ គិតពីពេលទទួល')
     else:
         if item.get("delivery_info"):
             lines.append(item["delivery_info"])
@@ -96,13 +81,11 @@ def build_delivery_message(item: dict) -> str:
 
 
 def get_delivery_fields(item: dict) -> dict:
-    """Structured version for the Mini App — five separate, individually
-    copyable fields instead of one text blob."""
     return {
         "login_name": item.get("login_name") or "",
         "login_password": item.get("login_password") or "",
         "totp_secret": (item.get("totp_secret") or "").replace(" ", "").upper(),
-        "delivery_note": item.get("delivery_info") or "",  # trade items / legacy fallback text
+        "delivery_note": item.get("delivery_info") or "",
         "has_totp": has_totp(item),
     }
 
@@ -111,11 +94,7 @@ def has_totp(item: dict) -> bool:
     return bool(item.get("totp_secret"))
 
 
-# ============================================================
-# File uploads (web-uploaded, not Telegram file_ids)
-# ============================================================
 def save_uploaded_file(file_storage, subdir="") -> str:
-    """Saves a Flask FileStorage upload into MEDIA_DIR, returns the relative path."""
     if not file_storage or not file_storage.filename:
         return ""
     ext = file_storage.filename.rsplit(".", 1)[-1].lower() if "." in file_storage.filename else "bin"
@@ -128,18 +107,7 @@ def save_uploaded_file(file_storage, subdir="") -> str:
     return os.path.join(subdir, name) if subdir else name
 
 
-# ============================================================
-# KHQR (Cambodia / Bakong) — generates a real EMV-QR KHQR string
-# and, if BAKONG_API_TOKEN is configured, can check whether that
-# exact bill has been paid. Without a token, checkout still works —
-# it just falls back to manual screenshot review by the admin.
-#
-# Requires: pip install bakong-khqr>=0.6.0
-# (tested against the real installed package — create_qr(), qr_image(),
-# generate_md5(), and check_payment() all match its actual API.)
-# ============================================================
 def generate_khqr(amount: float, bill_number: str, out_path: str = None):
-    """Returns (qr_string, md5_hash, image_path) or (None, None, None) if not configured."""
     if not BAKONG_ACCOUNT_ID:
         return None, None, None
     try:
@@ -165,9 +133,6 @@ def generate_khqr(amount: float, bill_number: str, out_path: str = None):
 
 
 def check_khqr_paid(md5_hash: str) -> bool:
-    """Polls Bakong to check if a specific KHQR bill has been paid.
-    Returns False (not an error) if BAKONG_API_TOKEN isn't configured —
-    the order just stays 'pending' until an admin approves it manually."""
     if not BAKONG_API_TOKEN or not md5_hash:
         return False
     try:
