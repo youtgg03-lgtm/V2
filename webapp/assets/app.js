@@ -116,7 +116,7 @@ function renderCollections(items){
   items.forEach(i => { if(i.quantity > 0) counts[i.category] = (counts[i.category] || 0) + 1; });
   const tiles = ['all', ...allCategories].map(c => {
     const label = c === 'all' ? t('all') : c;
-    const emoji = c === 'all' ? '🗂️' : categoryEmoji(c);
+    const emoji = c === 'all' ? '📦' : categoryEmoji(c);
     const count = c === 'all' ? items.filter(i=>i.quantity>0).length : (counts[c] || 0);
     return `
       <button class="collection-tile ${c===activeCategory?'active':''}" onclick="setCategory('${c}')">
