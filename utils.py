@@ -71,8 +71,14 @@ def build_delivery_message(item: dict) -> str:
         if item.get("delivery_info"):
             lines.append(item["delivery_info"])
         if item.get("totp_secret"):
-            lines.append(f"\n🔐 Authenticator code: {generate_totp_code(item['totp_secret'])}")
-            lines.append("(ចូល Telegram → ការបញ្ជាទិញរបស់ខ្ញុំ ដើម្បីទទួលបានលេខកូដថ្មីរាល់ 30 វិនាទី)")
+            secret = item["totp_secret"].replace(" ", "").upper()
+            lines.append(f"\n🔑 Authenticator Setup Key (វាយបញ្ចូល App ដោយខ្លួនឯង):\n{secret}")
+            lines.append(
+                "\n👉 បើកលឿន? Copy លេខកូដ 6 ខ្ទង់ដែលកំពុង Live ក្នុង App ដោយផ្ទាល់ "
+                "(មិនចាំបាច់ដំឡើង Authenticator ខ្លួនឯងទេ)\n"
+                f"🔐 លេខកូដឥឡូវនេះ: {generate_totp_code(item['totp_secret'])}"
+            )
+            lines.append("(ចូល Telegram → ការបញ្ជាទិញរបស់ខ្ញុំ → Refresh ដើម្បីទទួលបានលេខកូដថ្មីរាល់ 30 វិនាទី)")
         warranty = item.get("warranty_days") or WARRANTY_DAYS_NO_AUTH
         lines.append(f"\n🛡️ Warranty: {warranty} ថ្ងៃ គិតពីពេលទទួល")
     else:
