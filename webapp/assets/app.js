@@ -273,11 +273,7 @@ function pollOrderStatus(orderId){
 function showDelivery(orderId, status){
   showCheckoutStage('success');
   document.getElementById('checkout-item-name-2').textContent = status.item_name || '';
-  document.getElementById('delivery-text').textContent = status.delivery_info || '';
-  // Only show the "how to install/login" help block if this order actually
-  // has an authenticator set up — no authenticator, no confusing extra steps.
-  document.getElementById('delivery-has-totp').classList.toggle('hidden', !status.has_totp);
-  if(status.has_totp) wireLiveCode(orderId, 'delivery-code-box');
+  document.getElementById('delivery-blocks').innerHTML = deliveryBlocksHTML(orderId, status.fields);
   notify('success'); haptic('heavy');
 }
 
@@ -348,35 +344,87 @@ async function hydrateOrderCard(o){
   if(!box || status.status !== 'approved') return;
   box.innerHTML = `
     ${warrantyCountdownHTML(status)}
-    <div class="field mt-8" style="margin-top:10px;">
-      <label>${t('delivery_details')}</label>
-      <div class="code-box" style="align-items:flex-start;">
-        <span class="mono" style="font-size:12px; white-space:pre-wrap; line-height:1.6;">${status.delivery_info || ''}</span>
-        <button class="copy-btn" onclick="navigator.clipboard.writeText(\`${(status.delivery_info||'').replace(/`/g,'')}\`)">Copy</button>
-      </div>
-    </div>
-    ${status.has_totp ? `
-    <div class="field" style="margin-bottom:0;">
-      <label>${t('live_code')}</label>
-      <div class="code-box" id="live-code-${o.id}"><span class="code">000 000</span><button class="copy-btn refresh-btn">${t('refresh')}</button></div>
-      <p class="muted" style="font-size:10.5px; margin-top:6px;">${t('how_to_login')} → <a href="#help" onclick="switchTab('help')" style="color:var(--amber);">${t('help_title')}</a></p>
-    </div>` : ''}
+    <div class="mt-8" style="margin-top:10px;">${deliveryBlocksHTML(o.id, status.fields)}</div>
   `;
-  if(status.has_totp) wireLiveCode(o.id, 'live-code-' + o.id);
 }
 
-async function wireLiveCode(orderId, boxId){
-  const box = document.getElementById(boxId);
-  if(!box) return;
-  async function refresh(){
-    box.querySelector('.code').textContent = '…';
-    try{ const res = await API.refreshCode(orderId); if(res.code) box.querySelector('.code').textContent = res.code.slice(0,3) + ' ' + res.code.slice(3); }catch(e){}
+/* ---------- tap-to-copy field component ---------- */
+let copyFieldSeq = 0;
+function copyFieldHTML(label, value, opts = {}){
+  const id = 'cf-' + (opts.id || (copyFieldSeq++));
+  const cls = opts.big ? 'cf-value big-code' : 'cf-value';
+  return `
+    <div class="copy-field" id="${id}" onclick="copyField('${id}', this)">
+      <div class="cf-label"><span>${label}</span><span class="cf-icon">📋</span></div>
+      <div class="${cls}" data-raw="${(value||'').replace(/"/g,'&quot;')}">${value || '—'}</div>
+      ${opts.refreshable ? `<button class="cf-refresh" onclick="event.stopPropagation(); refreshLiveField('${id}', ${opts.orderId})">${t('refresh')}</button>` : ''}
+    </div>`;
+}
+function copyField(fieldId, el){
+  const valueEl = el.querySelector('.cf-value');
+  const text = valueEl ? valueEl.dataset.raw : '';
+  if(!text || text === '—') return;
+  navigator.clipboard.writeText(text);
+  el.classList.add('copied');
+  setTimeout(() => el.classList.remove('copied'), 900);
+  showCopyToast();
+  haptic('light');
+}
+function showCopyToast(){
+  let toast = document.getElementById('copy-toast');
+  if(!toast){
+    toast = document.createElement('div');
+    toast.id = 'copy-toast';
+    toast.className = 'copy-toast';
+    toast.textContent = currentLang === 'km' ? '✅ បានចម្លង!' : '✅ Copied!';
+    document.body.appendChild(toast);
   }
-  box.querySelector('.refresh-btn').onclick = refresh;
-  refresh();
+  toast.classList.add('show');
+  clearTimeout(toast._hideTimer);
+  toast._hideTimer = setTimeout(() => toast.classList.remove('show'), 1200);
+}
+async function refreshLiveField(fieldId, orderId){
+  const el = document.getElementById(fieldId);
+  const valueEl = el.querySelector('.cf-value');
+  valueEl.textContent = '…';
+  try{
+    const res = await API.refreshCode(orderId);
+    if(res.code){
+      valueEl.textContent = res.code.slice(0,3) + ' ' + res.code.slice(3);
+      valueEl.dataset.raw = res.code;
+    }
+  }catch(e){}
+  haptic('light');
 }
 
-/* ---------- help tab: song toggle ---------- */
+/* Builds the full 5-block delivery layout: Name, Password, Setup Key,
+   fast-copy Live code (with refresh), and a link to the install guide. */
+function deliveryBlocksHTML(orderId, fields){
+  if(!fields) return '';
+  let html = '';
+  if(fields.login_name) html += copyFieldHTML('👤 ' + (currentLang==='km'?'ឈ្មោះគណនី':'Account Name'), fields.login_name);
+  if(fields.login_password) html += copyFieldHTML('🔑 ' + (currentLang==='km'?'លេខសម្ងាត់':'Password'), fields.login_password);
+  if(fields.has_totp && fields.totp_secret){
+    html += copyFieldHTML('🔐 ' + (currentLang==='km'?'Authenticator Key (ពេញ)':'Authenticator Key (full)'), fields.totp_secret);
+    html += copyFieldHTML('⚡ ' + (currentLang==='km'?'លេខកូដលឿន (Live)':'Fast code (Live)'), '000 000', {big:true, refreshable:true, orderId, id:'live-'+orderId});
+  }
+  if(!fields.login_name && !fields.login_password && fields.delivery_note){
+    html += copyFieldHTML('📦 ' + (currentLang==='km'?'ព័ត៌មានប្រគល់ជូន':'Delivery note'), fields.delivery_note);
+  }
+  html += `
+    <div class="copy-field guide-link" onclick="event.stopPropagation(); openGuideSheet();">
+      <div>
+        <div class="cf-label" style="margin-bottom:2px;">📲 ${currentLang==='km'?'ជំហានទាំងអស់':'Full guide'}</div>
+        <div class="cf-value">${t('how_to_login_full') || 'How to install & log in'}</div>
+      </div>
+      <span class="muted">›</span>
+    </div>`;
+  // auto-load the live code once, right after render
+  if(fields.has_totp) setTimeout(() => refreshLiveField('cf-live-' + orderId, orderId), 50);
+  return html;
+}
+
+/* ---------- help tab: guide sheet + song toggle ---------- */
 function openGuideSheet(){
   document.getElementById('guide-sheet').classList.add('open');
   document.getElementById('backdrop').classList.add('open');
