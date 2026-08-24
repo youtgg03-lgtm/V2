@@ -35,6 +35,8 @@ def init_db():
             description TEXT DEFAULT '',
             quantity INTEGER NOT NULL DEFAULT 0,
             warranty_days INTEGER NOT NULL DEFAULT 0,
+            login_name TEXT DEFAULT '',
+            login_password TEXT DEFAULT '',
             delivery_info TEXT DEFAULT '',
             totp_secret TEXT DEFAULT '',
             photo_path TEXT DEFAULT '',
@@ -43,6 +45,14 @@ def init_db():
             published INTEGER NOT NULL DEFAULT 0,
             created_at INTEGER NOT NULL
         )""")
+        # Safe to run on every startup even on an existing database — SQLite
+        # has no "ADD COLUMN IF NOT EXISTS", so we just swallow the error if
+        # the column's already there from a previous run.
+        for col in ("login_name TEXT DEFAULT ''", "login_password TEXT DEFAULT ''"):
+            try:
+                conn.execute(f"ALTER TABLE items ADD COLUMN {col}")
+            except sqlite3.OperationalError:
+                pass  # column already exists — fine
 
         conn.execute("""CREATE TABLE IF NOT EXISTS orders (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -104,17 +114,17 @@ def is_admin_id(chat_id: int) -> bool:
 # ITEMS
 # ============================================================
 def add_item(category, name, price, description="", quantity=0, warranty_days=0,
-             delivery_info="", totp_secret="", photo_path="", video_path="",
-             published=0):
+             login_name="", login_password="", delivery_info="", totp_secret="",
+             photo_path="", video_path="", published=0):
     with get_conn() as conn:
         cur = conn.execute(
             """INSERT INTO items (category, name, price, description, quantity,
-               warranty_days, delivery_info, totp_secret, photo_path, video_path,
-               is_new, published, created_at)
-               VALUES (?,?,?,?,?,?,?,?,?,?,1,?,?)""",
+               warranty_days, login_name, login_password, delivery_info, totp_secret,
+               photo_path, video_path, is_new, published, created_at)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,1,?,?)""",
             (category, name, price, description, quantity, warranty_days,
-             delivery_info, totp_secret, photo_path, video_path,
-             published, int(time.time())),
+             login_name, login_password, delivery_info, totp_secret,
+             photo_path, video_path, published, int(time.time())),
         )
         return cur.lastrowid
 
