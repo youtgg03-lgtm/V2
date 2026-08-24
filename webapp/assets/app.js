@@ -76,7 +76,7 @@ function pcardHTML(item){
   return `
     <div class="pcard ${soldOut ? 'sold-out' : ''}">
       <div class="pcard-media" onclick="${item.photo_url ? `openLightbox('${item.photo_url}')` : `openProduct(${item.id})`}">
-        ${isAccount ? `<div class="warranty-ribbon">${t('warranty_days', item.warranty_days || 14)}</div>` : `<div class="trade-badge">🔄 ${t('trade')}</div>`}
+        ${isAccount ? `<div class="warranty-ribbon">🛡️${t('warranty_days', item.warranty_days || 14)}</div>` : `<div class="trade-badge">🔄 ${t('trade')}</div>`}
         ${item.is_new ? `<div class="new-badge">${t('new')}</div>` : ''}
         ${soldOut ? `<div class="sold-badge">${t('sold_out')}</div>` : ''}
         ${media}
